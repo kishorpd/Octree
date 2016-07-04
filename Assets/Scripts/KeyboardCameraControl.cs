@@ -7,82 +7,122 @@ using System;
 
 using System.Collections.Generic;
 
-//[AddComponentMenu("Camera-Control/Keyboard")]
 public class KeyboardCameraControl : MonoBehaviour
 {
-	static float lookSpeed = 5.0f;
-	float moveSpeed = 0.2f;
+	public float MaxDimension = 17.0f;
+	public float MaxDimensionEnvironment = 28.0f;
+	public float Center = 0.0f;
 
 
-	public struct myVec3
+	GameObject _Target;
+	bool _TargetActive = true;
+
+	static float SLookSpeed = 5.0f;
+	float _MoveSpeed = 0.2f;
+	Vector3 _TargetPosition;
+
+	float _RotationX = 0.0f;
+	float _RotationY = 0.0f;
+
+	bool LockCursor = false;
+
+	CursorLockMode wantedMode;
+
+	// Apply requested cursor state
+	void SetCursorState()
 	{
-		public float _X,_Y, _Z;
+		Cursor.lockState = wantedMode;
+		// Hide cursor when locking
+		Cursor.visible = (CursorLockMode.Locked != wantedMode);
+	}
 
-		public myVec3(Vector3 vec)
-		{
-			this._X = vec.x;
-			this._Y = vec.y;
-			this._Z = vec.z;
-		}
-		// Override the ToString method:
-		public override string ToString()
-		{
-			return (String.Format("({0},{1},{2})", _X, _Y, _Z));
-		}
-	};
-
-	float rotationX = 0.0f;
-	float rotationY = 0.0f;
-
-	[DllImport("OctreeT", EntryPoint = "TestDivide")]
-	public static extern float StraightFromDllTestDivide(float a, float b);
-
-	[DllImport("OctreeT", EntryPoint = "TestGameObj")]
-	public static extern float TestGameObj(System.IntPtr aa);
-	
-	[DllImport("OctreeT", EntryPoint = "AddOne")]
-	public static extern myVec3 AddOne(myVec3 vec);
-
-	[DllImport("OctreeT", EntryPoint = "stayPersistant")]
-	public static extern int stayPersistant;
-
-	
-	
-	//============================
-	System.IntPtr pnt = Marshal.AllocHGlobal(4);
-                  
 	void Start()
 	{
-		//pnt = (System.IntPtr)4.5f;
-		float straightFromDllDivideResult = StraightFromDllTestDivide(20, 5);
-		// Print it out to the console
-		Debug.Log("First output from dll:" + straightFromDllDivideResult);
-		Vector3 ab = new Vector3(2,3,4);
-		myVec3 mv = new myVec3(ab);
-		Debug.Log("AddOne:" + AddOne(mv));
-		Debug.Log("stayPersistant:" + stayPersistant++);
-	//	Debug.Log("Null or not:" + TestGameObj(pnt));
-		Debug.Log("stayPersistant:" + stayPersistant++);
-
+		_Target = this.transform.GetChild(0).gameObject;
+		MaxDimension /= 2;
 	}
 
 	void Update()
 	{
-		rotationX += Input.GetAxis("Mouse X") * lookSpeed;
-		rotationY += Input.GetAxis("Mouse Y") * lookSpeed;
-		rotationY = Mathf.Clamp(rotationY, -90, 90);
+		if (LockCursor)
+		{
+			if (Input.GetKeyDown("escape"))
+			{ 
+				LockCursor = !LockCursor;
+				Cursor.lockState = wantedMode = CursorLockMode.None;
+			}
 
-		transform.localRotation = Quaternion.AngleAxis(rotationX, Vector3.up);
-		transform.localRotation *= Quaternion.AngleAxis(rotationY, Vector3.left);
+			_TargetPosition = _Target.transform.position;
+			_RotationX += Input.GetAxis("Mouse X") * SLookSpeed;
+			_RotationY += Input.GetAxis("Mouse Y") * SLookSpeed;
+			_RotationY = Mathf.Clamp(_RotationY, -90, 90);
 
-		transform.position += transform.forward * moveSpeed * Input.GetAxis("Vertical");
-		transform.position += transform.right * moveSpeed * Input.GetAxis("Horizontal");
+			transform.localRotation = Quaternion.AngleAxis(_RotationX, Vector3.up);
+			transform.localRotation *= Quaternion.AngleAxis(_RotationY, Vector3.left);
+
+			transform.position += transform.forward * _MoveSpeed * Input.GetAxis("Vertical");
+			transform.position += transform.right *   _MoveSpeed * Input.GetAxis("Horizontal");
+			Debug.Log("IsWithinCube(): " + IsWithinCube());
+			Debug.Log("IsWithinEnvironMent(): " + IsWithinEnvironMent());
+			if (!IsWithinCube())
+			{
+				if (_TargetActive)
+				{
+					_TargetActive = false;
+					_Target.SetActive(_TargetActive);
+				}
+			}
+			else
+			{
+				if (!_TargetActive)
+				{
+					_TargetActive = true;
+					_Target.SetActive(_TargetActive);
+				}
+			}
+
+			if (!IsWithinEnvironMent())
+			{
+				transform.position -= transform.forward * _MoveSpeed * Input.GetAxis("Vertical");
+				transform.position -= transform.right * _MoveSpeed * Input.GetAxis("Horizontal");
+			}
+		}
+		else
+		{
+			if (Input.GetMouseButtonDown(0))
+			{ 
+				LockCursor = !LockCursor;
+				wantedMode = CursorLockMode.Locked;
+			}
+		}
+
+			SetCursorState();
+
+
+
+	}
+
+	bool IsWithinCube()
+	{
+		return
+		(
+			((_TargetPosition.x > (-MaxDimension)) && (_TargetPosition.x < (MaxDimension))) &&
+			((_TargetPosition.y > (-MaxDimension)) && (_TargetPosition.y < (MaxDimension))) &&
+			((_TargetPosition.z > (-MaxDimension)) && (_TargetPosition.z < (MaxDimension)))
+		);
 	}
 
 
-	//myVec3 vectorToMyVec3(Vector3 vec)
-	//{ 
-	//	myVec3 loc = new myVec3();
-	//	loc._X = vec.x;
-	//}
+	bool IsWithinEnvironMent()
+	{
+		return
+		(
+			((this.transform.position.x > (-MaxDimensionEnvironment)) && (this.transform.position.x < (MaxDimensionEnvironment))) &&
+			((this.transform.position.y > (-MaxDimensionEnvironment)) && (this.transform.position.y < (MaxDimensionEnvironment))) &&
+			((this.transform.position.z > (-MaxDimensionEnvironment)) && (this.transform.position.z < (MaxDimensionEnvironment)))
+		);
+	}
+	
+
+
 }
