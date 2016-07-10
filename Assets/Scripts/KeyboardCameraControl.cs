@@ -24,7 +24,7 @@ public class KeyboardCameraControl : MonoBehaviour
 	float _RotationX = 0.0f;
 	float _RotationY = 0.0f;
 
-	bool LockCursor = false;
+	public bool LockCursor = false;
 
 	CursorLockMode wantedMode;
 
@@ -52,6 +52,7 @@ public class KeyboardCameraControl : MonoBehaviour
 				Cursor.lockState = wantedMode = CursorLockMode.None;
 			}
 
+
 			_TargetPosition = _Target.transform.position;
 			_RotationX += Input.GetAxis("Mouse X") * SLookSpeed;
 			_RotationY += Input.GetAxis("Mouse Y") * SLookSpeed;
@@ -62,8 +63,6 @@ public class KeyboardCameraControl : MonoBehaviour
 
 			transform.position += transform.forward * _MoveSpeed * Input.GetAxis("Vertical");
 			transform.position += transform.right *   _MoveSpeed * Input.GetAxis("Horizontal");
-			Debug.Log("IsWithinCube(): " + IsWithinCube());
-			Debug.Log("IsWithinEnvironMent(): " + IsWithinEnvironMent());
 			if (!IsWithinCube())
 			{
 				if (_TargetActive)
@@ -90,9 +89,12 @@ public class KeyboardCameraControl : MonoBehaviour
 		else
 		{
 			if (Input.GetMouseButtonDown(0))
-			{ 
-				LockCursor = !LockCursor;
-				wantedMode = CursorLockMode.Locked;
+			{
+				if (Input.mousePosition.x < (Screen.width * (0.7f)))
+				{ 
+					LockCursor = !LockCursor;
+					wantedMode = CursorLockMode.Locked;
+				}
 			}
 		}
 
