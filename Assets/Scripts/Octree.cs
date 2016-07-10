@@ -283,6 +283,16 @@ namespace Assets.Scripts
 			return octants;
 		}
 
+		byte OctantsToByte(int octant)
+		{
+			byte octantByte = 128;// (1 << 1) & 0xFF;
+			///octantByte <<= unchecked((int)(octant));
+			octantByte >>= octant;
+			Debug.Log("___octantByte: " + Convert.ToString(octantByte, 2));
+
+			return octantByte;
+		}
+
 		byte OctantsToByte(int octant, byte octantsFilled)
 		{
 			byte octantByte = 128;// (1 << 1) & 0xFF;
@@ -297,6 +307,7 @@ namespace Assets.Scripts
 
 		}
 
+		
 		bool ExistsInAllQuadrants(Vector3 particleCenter)
 		{
 			//keeping readability
