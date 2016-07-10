@@ -45,6 +45,11 @@ namespace Assets.Scripts
 		static float SRadiusDiagonal = 0;
 		static float SRadiusSquare = 0;
 
+		bool debugVertices = false;
+
+#if DEBUG
+		public static MainInstance SMainInstance { get; set; }
+#endif
 
 		enum OctantEnums : byte
 		{
@@ -59,6 +64,21 @@ namespace Assets.Scripts
 		}
 
 
+#if DEBUG
+		public Octree(Vector3 center, Vector3 halfWidth, float particleRadius, MainInstance main)
+		{
+			//constructor of root 
+			Center = center;
+			HalfWidth = halfWidth;
+			SRadius = particleRadius;
+			SRadiusSquare = SRadius * SRadius;
+			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
+			Debug.Log("SRadius : " + SRadius);
+			SMainInstance = main;
+		}
+#endif
+
+
 		public Octree(Vector3 center, Vector3 halfWidth, float particleRadius)
 		{
 			//constructor of root 
@@ -68,6 +88,7 @@ namespace Assets.Scripts
 			SRadiusSquare = SRadius * SRadius;
 			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
 			Debug.Log("SRadius : " + SRadius);
+
 		}
 
 		public bool Insert(GameObject particleObject)
@@ -82,6 +103,10 @@ namespace Assets.Scripts
 
 		int GetOctant(Vector3 position)
 		{
+#if DEBUG
+			if (debugVertices) SMainInstance.SpawnVertex(position);
+#endif
+
 			return ((position.y < Center.y) ? (InQuadrantXZ(position) + 4) : (InQuadrantXZ(position)));
 		}
 
@@ -177,7 +202,8 @@ namespace Assets.Scripts
 			//	}
 
 			byte octants = Convert.ToByte("00000000", 2);
-
+			debugVertices = true;
+			Debug.Log("___octants.12_1: " + octants);
 			if (ExistsInAllQuadrants(particlePosition))
 			{
 				octants = Convert.ToByte("11111111", 2);// 255;
@@ -191,8 +217,7 @@ namespace Assets.Scripts
 				{
 					particlePosition.x -= SRadius;
 					if (GetOctant(particlePosition) != particleOctant)
-						if ((octants | OctantsToByte(GetOctant(particlePosition))) != octants)
-						octants |= OctantsToByte(GetOctant(particlePosition));
+						octants |= OctantsToByte(GetOctant(particlePosition), octants);
 					particlePosition.x += SRadius;
 
 					diagonal.x = particlePosition.x - (SRadiusDiagonal);
@@ -201,7 +226,7 @@ namespace Assets.Scripts
 				{
 					particlePosition.x += SRadius;
 					if (GetOctant(particlePosition) != particleOctant)
-						octants |= OctantsToByte(GetOctant(particlePosition));
+						octants |= OctantsToByte(GetOctant(particlePosition), octants);
 					particlePosition.x -= SRadius;
 
 					diagonal.x = particlePosition.x + (SRadiusDiagonal);
@@ -212,7 +237,7 @@ namespace Assets.Scripts
 				{
 					particlePosition.y -= SRadius;
 					if (GetOctant(particlePosition) != particleOctant)
-						octants |= OctantsToByte(GetOctant(particlePosition));
+						octants |= OctantsToByte(GetOctant(particlePosition), octants);
 					particlePosition.y += SRadius;
 
 					diagonal.y = particlePosition.y - (SRadiusDiagonal);
@@ -221,15 +246,16 @@ namespace Assets.Scripts
 				{
 					particlePosition.y += SRadius;
 					if (GetOctant(particlePosition) != particleOctant)
-						octants |= OctantsToByte(GetOctant(particlePosition));
+						octants |= OctantsToByte(GetOctant(particlePosition), octants);
 					particlePosition.y -= SRadius;
 
 					diagonal.y = particlePosition.y + (SRadiusDiagonal);
 				}
 
 				//check for the XY plane's diagonal
+				Debug.Log("__diagonal.xy_: " + diagonal);
 				if (GetOctant(diagonal) != particleOctant)
-					octants |= OctantsToByte(GetOctant(diagonal));
+					octants |= OctantsToByte(GetOctant(diagonal), octants);
 				
 				
 				//check for z
@@ -237,7 +263,7 @@ namespace Assets.Scripts
 				{
 					particlePosition.z -= SRadius;
 					if (GetOctant(particlePosition) != particleOctant)
-						octants |= OctantsToByte(GetOctant(particlePosition));
+						octants |= OctantsToByte(GetOctant(particlePosition), octants);
 					particlePosition.z += SRadius;
 
 					diagonal.z = particlePosition.z - (SRadiusDiagonal);
@@ -246,24 +272,26 @@ namespace Assets.Scripts
 				{
 					particlePosition.z += SRadius;
 					if (GetOctant(particlePosition) != particleOctant)
-						octants |= OctantsToByte(GetOctant(particlePosition));
+						octants |= OctantsToByte(GetOctant(particlePosition), octants);
 					particlePosition.z -= SRadius;
 
 					diagonal.z = particlePosition.z + (SRadiusDiagonal);
 				}
 
 				float tempVal = diagonal.x;
-				diagonal.x = 0;
+				diagonal.x = particlePosition.x;
 				//check for the YZ plane's diagonal
+				Debug.Log("__diagonal.yz_: " + diagonal);
 				if (GetOctant(diagonal) != particleOctant)
-					octants |= OctantsToByte(GetOctant(diagonal));
+					octants |= OctantsToByte(GetOctant(diagonal), octants);
 
 				diagonal.x = tempVal;
 				tempVal = diagonal.y;
-				diagonal.y = 0;
+				diagonal.y = particlePosition.y;
 				//check for the XZ plane's diagonal
+				Debug.Log("__diagonal.xz_: " + diagonal);
 				if (GetOctant(diagonal) != particleOctant)
-				octants |= OctantsToByte(GetOctant(diagonal));
+					octants |= OctantsToByte(GetOctant(diagonal), octants);
 
 			}
 
@@ -277,28 +305,30 @@ namespace Assets.Scripts
 					Debug.Log("i: " + i + ". OctantsToByte: " + Convert.ToString(tempOctant, 2));
 			}
 
-			Debug.Log("___octants: " + Convert.ToString(octants, 2));
+			Debug.Log("___octants.10 : " + Convert.ToString(octants, 2));
+			Debug.Log("___octants.12_2: " + octants);
 
+			debugVertices = false;
 
 			return octants;
 		}
 
 		byte OctantsToByte(int octant)
 		{
-			byte octantByte = 128;// (1 << 1) & 0xFF;
+			byte octantByte = 128;
 			///octantByte <<= unchecked((int)(octant));
 			octantByte >>= octant;
-			Debug.Log("___octantByte: " + Convert.ToString(octantByte, 2));
 
 			return octantByte;
 		}
 
 		byte OctantsToByte(int octant, byte octantsFilled)
 		{
-			byte octantByte = 128;// (1 << 1) & 0xFF;
+			byte octantByte = 128;
 			///octantByte <<= unchecked((int)(octant));
 			octantByte >>= octant;
-			Debug.Log("___octantByte: " + Convert.ToString(octantByte, 2));
+			Debug.Log("_OctantsToByte(,)__octantByte: " + Convert.ToString(octantByte, 2));
+			Debug.Log("_OctantsToByte(,)__octantsFilled: " + Convert.ToString(octantsFilled, 2));
 
 			if ((octantsFilled | octant) == octant)
 				return octantByte;

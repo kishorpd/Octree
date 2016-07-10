@@ -8,6 +8,7 @@ public class MainInstance : MonoBehaviour {
 
 	//____public
 	public GameObject ParticlePrefab;
+	public GameObject VertexPrefab;
 	public GameObject ParticleSpawner;
 	public Camera GLCamera;
 
@@ -45,7 +46,12 @@ public class MainInstance : MonoBehaviour {
 		_KeyboardCameraControl = GLCamera.GetComponent<KeyboardCameraControl>();
 		CubeCenter = gridOverlay.CubeCenter;
 		CubeWidth = gridOverlay.CubeWidth;
-		RootOcTree = new Octree(CubeCenter, CubeWidth, ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x);
+		
+#if DEBUG
+		RootOcTree = new Octree(CubeCenter, CubeWidth, ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x/2, this);
+#else
+		RootOcTree = new Octree(CubeCenter, CubeWidth, ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x/2);
+#endif
 
 	}
 	
@@ -110,5 +116,10 @@ public class MainInstance : MonoBehaviour {
 		}//switch end
 	}
 
+
+	public void SpawnVertex(Vector3 positionToSpawn)
+	{
+		Instantiate(VertexPrefab, new Vector3(positionToSpawn.x, positionToSpawn.y, positionToSpawn.z), Quaternion.identity);
+	}
 
 }
