@@ -42,6 +42,7 @@ namespace Assets.Scripts
 		List<Octree> children = new List<Octree>();
 		Dictionary<int, List<Octree>> OverLappingParticles = new Dictionary<int, List<Octree>>();
 		static float SRadius = 0;
+		static float SRadiusDiagonal = 0;
 		static float SRadiusSquare = 0;
 
 
@@ -65,6 +66,7 @@ namespace Assets.Scripts
 			HalfWidth = halfWidth;
 			SRadius = particleRadius;
 			SRadiusSquare = SRadius * SRadius;
+			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
 			Debug.Log("SRadius : " + SRadius);
 		}
 
@@ -101,7 +103,7 @@ namespace Assets.Scripts
 
 		}
 
-		byte OctantsOverlapping(Vector3 center)
+		byte OctantsOverlapping(Vector3 particlePosition)
 		{
 
 			//             +XY								  +YZ
@@ -175,25 +177,124 @@ namespace Assets.Scripts
 			//	}
 
 			byte octants = Convert.ToByte("00000000", 2);
-			if (!ExistsInAllQuadrants(center))
+
+			if (ExistsInAllQuadrants(particlePosition))
 			{
 				octants = Convert.ToByte("11111111", 2);// 255;
 			}
+			else 
+			{
+				Vector3 diagonal = particlePosition;
+				int particleOctant = GetOctant(particlePosition);
+				//check for x
+				if (Center.x < particlePosition.x)
+				{
+					particlePosition.x -= SRadius;
+					if (GetOctant(particlePosition) != particleOctant)
+						if ((octants | OctantsToByte(GetOctant(particlePosition))) != octants)
+						octants |= OctantsToByte(GetOctant(particlePosition));
+					particlePosition.x += SRadius;
 
-			//if (octants.ToString() == OctantEnums.O0.ToString())
-			for (int i = 0; i < 8; ++i )
-				Debug.Log("OctantsToByte: " + Convert.ToString( OctantsToByte(i),2));
+					diagonal.x = particlePosition.x - (SRadiusDiagonal);
+				}
+				else
+				{
+					particlePosition.x += SRadius;
+					if (GetOctant(particlePosition) != particleOctant)
+						octants |= OctantsToByte(GetOctant(particlePosition));
+					particlePosition.x -= SRadius;
+
+					diagonal.x = particlePosition.x + (SRadiusDiagonal);
+				}
+	
+				// check for y
+				if (Center.y < particlePosition.y)
+				{
+					particlePosition.y -= SRadius;
+					if (GetOctant(particlePosition) != particleOctant)
+						octants |= OctantsToByte(GetOctant(particlePosition));
+					particlePosition.y += SRadius;
+
+					diagonal.y = particlePosition.y - (SRadiusDiagonal);
+				}
+				else
+				{
+					particlePosition.y += SRadius;
+					if (GetOctant(particlePosition) != particleOctant)
+						octants |= OctantsToByte(GetOctant(particlePosition));
+					particlePosition.y -= SRadius;
+
+					diagonal.y = particlePosition.y + (SRadiusDiagonal);
+				}
+
+				//check for the XY plane's diagonal
+				if (GetOctant(diagonal) != particleOctant)
+					octants |= OctantsToByte(GetOctant(diagonal));
+				
+				
+				//check for z
+				if (Center.z < particlePosition.z)
+				{
+					particlePosition.z -= SRadius;
+					if (GetOctant(particlePosition) != particleOctant)
+						octants |= OctantsToByte(GetOctant(particlePosition));
+					particlePosition.z += SRadius;
+
+					diagonal.z = particlePosition.z - (SRadiusDiagonal);
+				}
+				else
+				{
+					particlePosition.z += SRadius;
+					if (GetOctant(particlePosition) != particleOctant)
+						octants |= OctantsToByte(GetOctant(particlePosition));
+					particlePosition.z -= SRadius;
+
+					diagonal.z = particlePosition.z + (SRadiusDiagonal);
+				}
+
+				float tempVal = diagonal.x;
+				diagonal.x = 0;
+				//check for the YZ plane's diagonal
+				if (GetOctant(diagonal) != particleOctant)
+					octants |= OctantsToByte(GetOctant(diagonal));
+
+				diagonal.x = tempVal;
+				tempVal = diagonal.y;
+				diagonal.y = 0;
+				//check for the XZ plane's diagonal
+				if (GetOctant(diagonal) != particleOctant)
+				octants |= OctantsToByte(GetOctant(diagonal));
+
+			}
+
+
+			Debug.Log("__+++++++++++++++++++++++++++++++++++++++++++++++++++_");
+			////if (octants.ToString() == OctantEnums.O0.ToString())
+			for (int i = 0; i < 8; ++i)
+			{
+				byte tempOctant = OctantsToByte(i);
+				if (tempOctant == (octants & tempOctant))
+					Debug.Log("i: " + i + ". OctantsToByte: " + Convert.ToString(tempOctant, 2));
+			}
+
+			Debug.Log("___octants: " + Convert.ToString(octants, 2));
 
 
 			return octants;
 		}
 
-		byte OctantsToByte(int octant)
+		byte OctantsToByte(int octant, byte octantsFilled)
 		{
-			byte octantByte = 1;// (1 << 1) & 0xFF;
+			byte octantByte = 128;// (1 << 1) & 0xFF;
 			///octantByte <<= unchecked((int)(octant));
-			octantByte <<= octant;
-			return octantByte;
+			octantByte >>= octant;
+			Debug.Log("___octantByte: " + Convert.ToString(octantByte, 2));
+
+			if ((octantsFilled | octant) == octant)
+				return octantByte;
+			else
+				return 0;
+
 		}
 
 		bool ExistsInAllQuadrants(Vector3 particleCenter)
@@ -202,6 +303,9 @@ namespace Assets.Scripts
 			float x = Center.x - particleCenter.x;
 			float y = Center.y - particleCenter.y;
 			float z = Center.z - particleCenter.z;
+
+			Debug.Log("(((x * x) + (y * y) + (z * z)): " + (((x * x) + (y * y) + (z * z))));
+			Debug.Log("SRadiusSquare: " + SRadiusSquare);
 
 			return (((x * x) + (y * y) + (z * z)) <= SRadiusSquare);
 		}
