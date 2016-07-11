@@ -1,9 +1,12 @@
-﻿using UnityEngine;
+﻿
+
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
 
 namespace Assets.Scripts
 {
@@ -39,13 +42,23 @@ namespace Assets.Scripts
 		Vector3 HalfWidth;// = new Vector3();
 		int TotalChildren = 0;
 		Octree Parent = null;
-		List<Octree> children = new List<Octree>();
-		Dictionary<int, List<Octree>> OverLappingParticles = new Dictionary<int, List<Octree>>();
+		Dictionary<int, Octree> _Nodes = new Dictionary<int, Octree>();
+		List<GameObject> _Children = new List<GameObject>();
+		Dictionary<int, List<GameObject>> _OverLappingParticles = new Dictionary<int, List<GameObject>>();
 		static float SRadius = 0;
 		static float SRadiusDiagonal = 0;
 		static float SRadiusSquare = 0;
+		static int SMaxChildren = 8;
+		static int SMaxDepthToStopAt = 10;
+		static int SMaxDepthReached = 0;
+		static bool SDebugVertices = false;
+		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
+		static float sQuarterDiagonal;
 
-		bool debugVertices = false;
+
+		bool _OverFlow = false;
+		int _TotalChildren = 0;
+		int _CurrentDepth = 0;
 
 #if DEBUG
 		public static MainInstance SMainInstance { get; set; }
@@ -53,14 +66,14 @@ namespace Assets.Scripts
 
 		enum OctantEnums : byte
 		{
-			O0= 0x001, // 00000001
-			O1= 0x002, // 00000010
-			O2= 0x004, // 00000100
-			O3= 0x008, // 00001000
-			O4= 0x010, // 00010000
-			O5= 0x020, // 00100000
-			O6= 0x040, // 01000000
-			O7= 0x080, // 10000000
+			O0 = 0	,//= 0x001, // 00000001
+			O1		,//= 0x002, // 00000010
+			O2		,//= 0x004, // 00000100
+			O3		,//= 0x008, // 00001000
+			O4		,//= 0x010, // 00010000
+			O5		,//= 0x020, // 00100000
+			O6		,//= 0x040, // 01000000
+			O7		 //= 0x080, // 10000000
 		}
 
 
@@ -75,6 +88,13 @@ namespace Assets.Scripts
 			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
 			Debug.Log("SRadius : " + SRadius);
 			SMainInstance = main;
+
+			//store one fourth of a diagonal
+			float x = HalfWidth.x;
+			float y = HalfWidth.y;
+			float z = HalfWidth.z;
+
+			sQuarterDiagonal = ((float)SQUARE_ROOT_THREE_BY_TWO) * Mathf.Sqrt(((x * x) + (y * y) + (z * z)));
 		}
 #endif
 
@@ -87,24 +107,76 @@ namespace Assets.Scripts
 			SRadius = particleRadius;
 			SRadiusSquare = SRadius * SRadius;
 			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
-			Debug.Log("SRadius : " + SRadius);
+			//Debug.Log("SRadius : " + SRadius);
+
+		}
+
+		Octree(Vector3 center, Vector3 halfWidth, Octree parent)
+		{
+			Center = center;
+			HalfWidth = halfWidth;
+			Parent = parent;
+			_CurrentDepth = parent._CurrentDepth + 1;
+
+			if (_CurrentDepth > SMaxDepthReached)
+				SMaxDepthReached = _CurrentDepth;
 
 		}
 
 		public bool Insert(GameObject particleObject)
 		{
+			int octantOfParticleObj = GetOctant(particleObject.transform.position);
+			if (_OverFlow) //total children > SMaxChildren
+			{
+				if (_Children.Count == 0)
+				{
+					//insert in children
+					
+					if (!_Nodes.ContainsKey(octantOfParticleObj))
+						_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(particleObject.transform.position)), HalfWidth / 2, this);
+
+					_Nodes[octantOfParticleObj].Insert(particleObject);
+				}
+				else 
+				{
+					//create new octrees from private constructor maybe
+					foreach( GameObject obj in _Children)
+					{
+						octantOfParticleObj = GetOctant(obj.transform.position);
+
+						if (!_Nodes.ContainsKey(octantOfParticleObj))
+							_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(particleObject.transform.position)), HalfWidth / 2, this);
+
+						_Nodes[octantOfParticleObj].Insert(obj);
+
+				
+					}
+						_Children.Clear();
+				}
+			}
+			else 
+			{
+				_Children.Add(particleObject);
+				Debug.Log(" _Children.Count : " + _Children.Count + " _CurrentDepth : " + _CurrentDepth);
+				++TotalChildren;
+				if (TotalChildren == SMaxChildren)
+				{
+					_OverFlow = true;
+				}
+			}
+
 			//get octant
-			OctantsOverlapping(particleObject.transform.position);
 			//particleObject.get sprite and radius from it
 			//check for overlapping octants
 			//drop in given overlapping octant
+			OctantsOverlapping(particleObject);
 			return false;
 		}
 
 		int GetOctant(Vector3 position)
 		{
 #if DEBUG
-			if (debugVertices) SMainInstance.SpawnVertex(position);
+			if (SDebugVertices) SMainInstance.SpawnVertex(position);
 #endif
 
 			return ((position.y < Center.y) ? (InQuadrantXZ(position) + 4) : (InQuadrantXZ(position)));
@@ -128,8 +200,11 @@ namespace Assets.Scripts
 
 		}
 
-		byte OctantsOverlapping(Vector3 particlePosition)
+		byte OctantsOverlapping(GameObject particleObj)
 		{
+			Vector3 particlePosition = particleObj.transform.position;
+			// This is a way to check the overlapping of sphere in octants
+			// But total number of the vertices to check are 22!
 
 			//             +XY								  +YZ
 			//
@@ -176,8 +251,8 @@ namespace Assets.Scripts
 
 
 
-
-			//Now I went through many implementations up above...which I am cancelling...but finally decided the one below
+			//Now I went through many implementations including the one up above...which I am cancelling...but finally decided the one below.
+			//Following is a more optimized way to achieve the same output. 
 
 			//Check if the distance between the center of the partition and center of the particle is less than 
 			//the radius.
@@ -202,8 +277,8 @@ namespace Assets.Scripts
 			//	}
 
 			byte octants = Convert.ToByte("00000000", 2);
-			debugVertices = true;
-			Debug.Log("___octants.12_1: " + octants);
+			SDebugVertices = true;
+			//Debug.Log("___octants.12_1: " + octants);
 			if (ExistsInAllQuadrants(particlePosition))
 			{
 				octants = Convert.ToByte("11111111", 2);// 255;
@@ -253,7 +328,7 @@ namespace Assets.Scripts
 				}
 
 				//check for the XY plane's diagonal
-				Debug.Log("__diagonal.xy_: " + diagonal);
+				//Debug.Log("__diagonal.xy_: " + diagonal);
 				if (GetOctant(diagonal) != particleOctant)
 					octants |= OctantsToByte(GetOctant(diagonal), octants);
 				
@@ -281,7 +356,7 @@ namespace Assets.Scripts
 				float tempVal = diagonal.x;
 				diagonal.x = particlePosition.x;
 				//check for the YZ plane's diagonal
-				Debug.Log("__diagonal.yz_: " + diagonal);
+				//Debug.Log("__diagonal.yz_: " + diagonal);
 				if (GetOctant(diagonal) != particleOctant)
 					octants |= OctantsToByte(GetOctant(diagonal), octants);
 
@@ -289,14 +364,14 @@ namespace Assets.Scripts
 				tempVal = diagonal.y;
 				diagonal.y = particlePosition.y;
 				//check for the XZ plane's diagonal
-				Debug.Log("__diagonal.xz_: " + diagonal);
+				//Debug.Log("__diagonal.xz_: " + diagonal);
 				if (GetOctant(diagonal) != particleOctant)
 					octants |= OctantsToByte(GetOctant(diagonal), octants);
 
 			}
 
 
-			Debug.Log("__+++++++++++++++++++++++++++++++++++++++++++++++++++_");
+			//Debug.Log("__+++++++++++++++++++++++++++++++++++++++++++++++++++_");
 			////if (octants.ToString() == OctantEnums.O0.ToString())
 			for (int i = 0; i < 8; ++i)
 			{
@@ -305,13 +380,18 @@ namespace Assets.Scripts
 				{ 
 					Debug.Log("i: " + i + ". OctantsToByte: " + Convert.ToString(tempOctant, 2));
 					//insert the object into that specific object
+					if (!_OverLappingParticles.ContainsKey(i))
+					{
+						_OverLappingParticles.Add(i, new List<GameObject>());
+					}
+					_OverLappingParticles[i].Add(particleObj);
 				}
 			}
 
-			Debug.Log("___octants.10 : " + Convert.ToString(octants, 2));
-			Debug.Log("___octants.12_2: " + octants);
+			//Debug.Log("___octants.10 : " + Convert.ToString(octants, 2));
+			//Debug.Log("___octants.12_2: " + octants);
 
-			debugVertices = false;
+			SDebugVertices = false;
 
 			return octants;
 		}
@@ -330,8 +410,8 @@ namespace Assets.Scripts
 			byte octantByte = 128;
 			///octantByte <<= unchecked((int)(octant));
 			octantByte >>= octant;
-			Debug.Log("_OctantsToByte(,)__octantByte: " + Convert.ToString(octantByte, 2));
-			Debug.Log("_OctantsToByte(,)__octantsFilled: " + Convert.ToString(octantsFilled, 2));
+			//Debug.Log("_OctantsToByte(,)__octantByte: " + Convert.ToString(octantByte, 2));
+			//Debug.Log("_OctantsToByte(,)__octantsFilled: " + Convert.ToString(octantsFilled, 2));
 
 			if ((octantsFilled | octant) == octant)
 				return octantByte;
@@ -348,10 +428,40 @@ namespace Assets.Scripts
 			float y = Center.y - particleCenter.y;
 			float z = Center.z - particleCenter.z;
 
-			Debug.Log("(((x * x) + (y * y) + (z * z)): " + (((x * x) + (y * y) + (z * z))));
-			Debug.Log("SRadiusSquare: " + SRadiusSquare);
+			//Debug.Log("SRadiusSquare: " + SRadiusSquare);
+			//Debug.Log("(((x * x) + (y * y) + (z * z)): " + (((x * x) + (y * y) + (z * z))));
 
 			return (((x * x) + (y * y) + (z * z)) <= SRadiusSquare);
+		}
+
+		Vector3 GetCenterOfOctant(int octant)
+		{ 
+			Vector3 octantCenter = Center;
+
+			OctantEnums octantCase = (OctantEnums)octant;
+			///there are two ways one is calculating with few if else other is using switch
+			///
+			//switch is more readable so going with switch
+
+
+			///CAUTION: IF THE OCTANTS ARE SCALED THIS LOGIC NEEDS TO CHANGE KEEPING IT THIS WAY TO OPTIMIZE.
+
+			switch (octantCase)
+			{
+
+				case OctantEnums.O0: return new /*+++*/ Vector3(octantCenter.x + sQuarterDiagonal, octantCenter.y + sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
+				case OctantEnums.O1: return new /*-++*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y + sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
+				case OctantEnums.O2: return new /*-+-*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y + sQuarterDiagonal, octantCenter.z - sQuarterDiagonal);
+				case OctantEnums.O3: return new /*--+*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
+				case OctantEnums.O4: return new /*+-+*/ Vector3(octantCenter.x + sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
+				case OctantEnums.O5: return new /*--+*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
+				case OctantEnums.O6: return new /*---*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z - sQuarterDiagonal);
+				case OctantEnums.O7: return new /*+--*/ Vector3(octantCenter.x + sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z - sQuarterDiagonal);
+
+			}
+
+			return new Vector3();
+
 		}
 
 	}

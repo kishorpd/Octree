@@ -6,9 +6,9 @@ public class GridOverlay : MonoBehaviour
 {
 	
 	// x ht, y , z
-	public const float Center = 0.0f;
+	public const float Center = 22.0f;
 	public const float MaxDimension = 17.0f;
-	Vector3 CubeDimension = new Vector3(MaxDimension/2,MaxDimension/2,MaxDimension/2);
+	 Vector3 CubeDimension = new Vector3(MaxDimension/2,MaxDimension/2,MaxDimension/2);
 
 	
 	private Material lineMaterial;
@@ -17,16 +17,16 @@ public class GridOverlay : MonoBehaviour
 	private Color mainColor = new Color(0f, 1f, 0f, 1f);
 	private Color subColor = new Color(0f, 0.5f, 0f, 1f);
 
-	public Vector3 CubeCenter;
-	public Vector3 PartitionerCenter;
+	public Vector3 CubeCenter = new Vector3(Center, Center, Center);
+	public Vector3 PartitionerCenter = new Vector3(Center, Center, Center);
 	public Vector3 CubeWidth;
 	int i = 0;
 	bool completed = true;
 
+	public bool ShowPartitions = true;
+
 	void Start()
 	{
-		PartitionerCenter = new Vector3(Center, Center, Center);
-		CubeCenter = new Vector3(Center, Center, Center);
 		CubeWidth = CubeDimension;
 	}
 
@@ -170,6 +170,11 @@ public class GridOverlay : MonoBehaviour
 		DrawPartitioners(PartitionerCenter, CubeWidth);
 		DrawCube(CubeCenter, CubeWidth);
 		_MainInstance.DrawParticlesDebug();
+
+		if (ShowPartitions)
+		{
+ 			//draw partitions for octrees
+		}
 
 		GL.End();
 	}

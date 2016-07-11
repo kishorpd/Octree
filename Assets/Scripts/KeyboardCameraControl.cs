@@ -109,9 +109,9 @@ public class KeyboardCameraControl : MonoBehaviour
 	{
 		return
 		(
-			((_TargetPosition.x > (-MaxDimension)) && (_TargetPosition.x < (MaxDimension))) &&
-			((_TargetPosition.y > (-MaxDimension)) && (_TargetPosition.y < (MaxDimension))) &&
-			((_TargetPosition.z > (-MaxDimension)) && (_TargetPosition.z < (MaxDimension)))
+			((_TargetPosition.x > (Center - MaxDimension)) && (_TargetPosition.x < (Center + MaxDimension))) &&
+			((_TargetPosition.y > (Center - MaxDimension)) && (_TargetPosition.y < (Center + MaxDimension))) &&
+			((_TargetPosition.z > (Center - MaxDimension)) && (_TargetPosition.z < (Center + MaxDimension)))
 		);
 	}
 
