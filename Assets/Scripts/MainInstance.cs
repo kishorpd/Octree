@@ -49,11 +49,8 @@ public class MainInstance : MonoBehaviour {
 		CubeCenter = _GridOverlay.CubeCenter;
 		CubeWidth = _GridOverlay.CubeDimension;
 		float _FParticleRadius = ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x / 2;
-#if DEBUG
 		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius, this);
-#else
-		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius);
-#endif
+		//RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius);
 		_VParticleRadius = new Vector3(_FParticleRadius, _FParticleRadius, _FParticleRadius);
 
 	}

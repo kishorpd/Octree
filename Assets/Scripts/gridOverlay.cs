@@ -24,6 +24,7 @@ public class GridOverlay : MonoBehaviour
 	bool completed = true;
 
 	public bool ShowPartitions = true;
+	public bool ShowParticleDebugLines = true;
 
 	void Start()
 	{
@@ -170,7 +171,9 @@ public class GridOverlay : MonoBehaviour
 		//Debug.Log("OnPostRender-> Center : " + PartitionerCenter + " HalfWidth :" + CubeWidth);
 		//DrawPartitioners(PartitionerCenter, CubeWidth);
 		DrawCube(CubeCenter, CubeWidth);
-		_MainInstance.DrawParticlesDebug();
+		
+		if (ShowParticleDebugLines)
+			_MainInstance.DrawParticlesDebug();
 
 		if (ShowPartitions)
 		{

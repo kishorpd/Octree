@@ -50,7 +50,7 @@ namespace Assets.Scripts
 		static int SMaxChildren = 8;
 		static int SMaxDepthToStopAt = 10;
 		static int SMaxDepthReached = 0;
-		static bool SDebugVertices = false;
+		static bool SDebugVertices { get; set; }
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
 
 
@@ -58,9 +58,7 @@ namespace Assets.Scripts
 		int _TotalChildren = 0;
 		int _CurrentDepth = 0;
 
-#if DEBUG
 		public static MainInstance SMainInstance { get; set; }
-#endif
 
 		enum OctantEnums : byte
 		{
@@ -75,7 +73,6 @@ namespace Assets.Scripts
 		}
 
 
-#if DEBUG
 		public Octree(Vector3 center, Vector3 halfWidth, float particleRadius, MainInstance main)
 		{
 			//constructor of root 
@@ -86,9 +83,8 @@ namespace Assets.Scripts
 			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
 			Debug.Log("SRadius : " + SRadius);
 			SMainInstance = main;
-
+			SDebugVertices = false;
 		}
-#endif
 
 
 		public Octree(Vector3 center, Vector3 halfWidth, float particleRadius)
@@ -167,9 +163,7 @@ namespace Assets.Scripts
 
 		int GetOctant(Vector3 position)
 		{
-#if DEBUG
 			if (SDebugVertices) SMainInstance.SpawnVertex(position);
-#endif
 
 			return ((position.y < Center.y) ? (InQuadrantXZ(position) + 4) : (InQuadrantXZ(position)));
 		}
@@ -269,7 +263,6 @@ namespace Assets.Scripts
 			//	}
 
 			byte octants = Convert.ToByte("00000000", 2);
-			SDebugVertices = true;
 			//Debug.Log("___octants.12_1: " + octants);
 			if (ExistsInAllQuadrants(particlePosition))
 			{
@@ -437,10 +430,37 @@ namespace Assets.Scripts
 			float y = HalfWidth.y / 2;
 			float z = HalfWidth.z / 2;
 
+
+
+			//           Quadrants considered
+
+			//	    +-----------+       +-----------+		   |+Y
+			//	   /_|________/ |	   /_|________/ |		   |
+			//	  /| |      / | |	  /| |      / | |		   |
+			//	 +----------+ | |	 +----------+ | |		   |
+			//	 | | |      | | |	 | | |      | | |		   |  /+Z
+			//	 | | +----2-|-|-+	 | | +----1-|-|-+		2  | /  1
+			//	 | |/_______|_|/ 	 | |/_______|_|/	-x_____|/_____+x
+			//	 |/    3    |/   	 |/    0    |/		   3  /|  0
+			//	 +---------+	   	 +---------+		   -z/ |
+			//												/  |
+			//												   |   
+			//	    +-----------+       +-----------+		   |
+			//	   /_|________/ |	   /_|________/ |		   |
+			//	  /| |      / | |	  /| |      / | |		   | -Y
+			//	 +----------+ | |	 +----------+ | |		
+			//	 | | |      | | |	 | | |      | | |		
+			//	 | | +----6-|-|-+	 | | +----5-|-|-+		
+			//	 | |/_______|_|/ 	 | |/_______|_|/ 	
+			//	 |/    7    |/   	 |/    4    |/   	
+			//	 +---------+	   	 +---------+	   
+
+
+
 			switch (octantCase)
 			{
 
-				case OctantEnums.O0: return new /*--+*/ Vector3(Center.x - x, Center.y - y, Center.z + z);
+				case OctantEnums.O0: return new /*++-*/ Vector3(Center.x + x, Center.y + y, Center.z - z);
 				case OctantEnums.O1: return new /*+++*/ Vector3(Center.x + x, Center.y + y, Center.z + z);
 				case OctantEnums.O2: return new /*-++*/ Vector3(Center.x - x, Center.y + y, Center.z + z);
 				case OctantEnums.O3: return new /*-+-*/ Vector3(Center.x - x, Center.y + y, Center.z - z);
