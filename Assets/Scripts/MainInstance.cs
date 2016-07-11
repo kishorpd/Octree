@@ -12,6 +12,7 @@ public class MainInstance : MonoBehaviour {
 	public GameObject ParticleSpawner;
 	public Camera GLCamera;
 
+	Vector3 _VParticleRadius;
 	float Center = 0.0f;
 	float MaxDimension = 17.0f;
 	Vector3 CubeCenter;
@@ -34,7 +35,7 @@ public class MainInstance : MonoBehaviour {
 	CursorMode _CursorMode = CursorMode.NORMAL;
 
 	KeyboardCameraControl _KeyboardCameraControl;
-
+	GridOverlay _GridOverlay;
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
 
@@ -42,16 +43,18 @@ public class MainInstance : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		_Particles = new List<GameObject>();
-		GridOverlay gridOverlay = GLCamera.GetComponent<GridOverlay>();
+		_GridOverlay = GLCamera.GetComponent<GridOverlay>();
 		_KeyboardCameraControl = GLCamera.GetComponent<KeyboardCameraControl>();
-		CubeCenter = gridOverlay.CubeCenter;
-		CubeWidth = gridOverlay.CubeWidth;
-		
+		_GridOverlay._MainInstance = this;
+		CubeCenter = _GridOverlay.CubeCenter;
+		CubeWidth = _GridOverlay.CubeWidth;
+		float _FParticleRadius = ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x / 2;
 #if DEBUG
-		RootOcTree = new Octree(CubeCenter, CubeWidth, ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x/2, this);
+		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius, this);
 #else
-		RootOcTree = new Octree(CubeCenter, CubeWidth, ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x/2);
+		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius);
 #endif
+		_VParticleRadius = new Vector3(_FParticleRadius, _FParticleRadius, _FParticleRadius);
 
 	}
 	
@@ -63,7 +66,6 @@ public class MainInstance : MonoBehaviour {
 			SpawnParticleOnClick();
 		}
 	}
-
 
 
 	void SpawnParticleOnClick()
@@ -120,6 +122,15 @@ public class MainInstance : MonoBehaviour {
 	public void SpawnVertex(Vector3 positionToSpawn)
 	{
 		Instantiate(VertexPrefab, new Vector3(positionToSpawn.x, positionToSpawn.y, positionToSpawn.z), Quaternion.identity);
+	}
+
+	public void DrawParticlesDebug()
+	{
+		foreach (GameObject particleObj in _Particles)
+		{
+			_GridOverlay.DrawCube(particleObj.transform.position, _VParticleRadius);
+			_GridOverlay.DrawPartitioners(particleObj.transform.position,_VParticleRadius);
+		}
 	}
 
 }

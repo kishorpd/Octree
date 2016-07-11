@@ -12,6 +12,7 @@ public class GridOverlay : MonoBehaviour
 
 	
 	private Material lineMaterial;
+	public MainInstance _MainInstance;
 
 	private Color mainColor = new Color(0f, 1f, 0f, 1f);
 	private Color subColor = new Color(0f, 0.5f, 0f, 1f);
@@ -104,7 +105,7 @@ public class GridOverlay : MonoBehaviour
 		DrawPlaneYZ(center, width);
 	}
 
-	void DrawCube(Vector3 center, Vector3 width)
+	public void DrawCube(Vector3 center, Vector3 width)
 	{
 
 		Vector3 tempCenter = new Vector3();
@@ -127,7 +128,7 @@ public class GridOverlay : MonoBehaviour
 		DrawPlaneYZ(tempCenter, width);
 	}
 
-	void DrawPartitioners(Vector3 center, Vector3 width)
+	public void DrawPartitioners(Vector3 center, Vector3 width)
 	{
 		DrawLine(center, new Vector3(0, width.y, 0));
 		DrawLine(center, new Vector3(0, 0, width.z));
@@ -168,7 +169,7 @@ public class GridOverlay : MonoBehaviour
 
 		DrawPartitioners(PartitionerCenter, CubeWidth);
 		DrawCube(CubeCenter, CubeWidth);
-	
+		_MainInstance.DrawParticlesDebug();
 
 		GL.End();
 	}

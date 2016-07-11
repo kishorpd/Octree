@@ -302,7 +302,10 @@ namespace Assets.Scripts
 			{
 				byte tempOctant = OctantsToByte(i);
 				if (tempOctant == (octants & tempOctant))
+				{ 
 					Debug.Log("i: " + i + ". OctantsToByte: " + Convert.ToString(tempOctant, 2));
+					//insert the object into that specific object
+				}
 			}
 
 			Debug.Log("___octants.10 : " + Convert.ToString(octants, 2));
@@ -322,7 +325,7 @@ namespace Assets.Scripts
 			return octantByte;
 		}
 
-		byte OctantsToByte(int octant, byte octantsFilled)
+		byte OctantsToByte(int octant, byte octantsFilled)						
 		{
 			byte octantByte = 128;
 			///octantByte <<= unchecked((int)(octant));

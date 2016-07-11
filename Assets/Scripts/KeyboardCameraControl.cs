@@ -24,6 +24,7 @@ public class KeyboardCameraControl : MonoBehaviour
 	float _RotationX = 0.0f;
 	float _RotationY = 0.0f;
 
+	
 	public bool LockCursor = false;
 
 	CursorLockMode wantedMode;
