@@ -40,7 +40,6 @@ namespace Assets.Scripts
 
 		Vector3 Center ;//= new Vector3();
 		Vector3 HalfWidth;// = new Vector3();
-		int TotalChildren = 0;
 		Octree Parent = null;
 		Dictionary<int, Octree> _Nodes = new Dictionary<int, Octree>();
 		List<GameObject> _Children = new List<GameObject>();
@@ -53,7 +52,6 @@ namespace Assets.Scripts
 		static int SMaxDepthReached = 0;
 		static bool SDebugVertices = false;
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
-		static float sQuarterDiagonal;
 
 
 		bool _OverFlow = false;
@@ -89,12 +87,6 @@ namespace Assets.Scripts
 			Debug.Log("SRadius : " + SRadius);
 			SMainInstance = main;
 
-			//store one fourth of a diagonal
-			float x = HalfWidth.x;
-			float y = HalfWidth.y;
-			float z = HalfWidth.z;
-
-			sQuarterDiagonal = ((float)SQUARE_ROOT_THREE_BY_TWO) * Mathf.Sqrt(((x * x) + (y * y) + (z * z)));
 		}
 #endif
 
@@ -107,7 +99,6 @@ namespace Assets.Scripts
 			SRadius = particleRadius;
 			SRadiusSquare = SRadius * SRadius;
 			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
-			//Debug.Log("SRadius : " + SRadius);
 
 		}
 
@@ -153,13 +144,14 @@ namespace Assets.Scripts
 					}
 						_Children.Clear();
 				}
+				++_TotalChildren;
 			}
 			else 
 			{
 				_Children.Add(particleObject);
-				Debug.Log(" _Children.Count : " + _Children.Count + " _CurrentDepth : " + _CurrentDepth);
-				++TotalChildren;
-				if (TotalChildren == SMaxChildren)
+				//Debug.Log(" _Children.Count : " + _Children.Count + " _CurrentDepth : " + _CurrentDepth);
+				++_TotalChildren;
+				if (_TotalChildren == SMaxChildren)
 				{
 					_OverFlow = true;
 				}
@@ -378,7 +370,7 @@ namespace Assets.Scripts
 				byte tempOctant = OctantsToByte(i);
 				if (tempOctant == (octants & tempOctant))
 				{ 
-					Debug.Log("i: " + i + ". OctantsToByte: " + Convert.ToString(tempOctant, 2));
+					//Debug.Log("i: " + i + ". OctantsToByte: " + Convert.ToString(tempOctant, 2));
 					//insert the object into that specific object
 					if (!_OverLappingParticles.ContainsKey(i))
 					{
@@ -436,32 +428,48 @@ namespace Assets.Scripts
 
 		Vector3 GetCenterOfOctant(int octant)
 		{ 
-			Vector3 octantCenter = Center;
-
 			OctantEnums octantCase = (OctantEnums)octant;
 			///there are two ways one is calculating with few if else other is using switch
-			///
+
 			//switch is more readable so going with switch
 
-
-			///CAUTION: IF THE OCTANTS ARE SCALED THIS LOGIC NEEDS TO CHANGE KEEPING IT THIS WAY TO OPTIMIZE.
+			float x = HalfWidth.x / 2;
+			float y = HalfWidth.y / 2;
+			float z = HalfWidth.z / 2;
 
 			switch (octantCase)
 			{
 
-				case OctantEnums.O0: return new /*+++*/ Vector3(octantCenter.x + sQuarterDiagonal, octantCenter.y + sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
-				case OctantEnums.O1: return new /*-++*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y + sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
-				case OctantEnums.O2: return new /*-+-*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y + sQuarterDiagonal, octantCenter.z - sQuarterDiagonal);
-				case OctantEnums.O3: return new /*--+*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
-				case OctantEnums.O4: return new /*+-+*/ Vector3(octantCenter.x + sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
-				case OctantEnums.O5: return new /*--+*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z + sQuarterDiagonal);
-				case OctantEnums.O6: return new /*---*/ Vector3(octantCenter.x - sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z - sQuarterDiagonal);
-				case OctantEnums.O7: return new /*+--*/ Vector3(octantCenter.x + sQuarterDiagonal, octantCenter.y - sQuarterDiagonal, octantCenter.z - sQuarterDiagonal);
+				case OctantEnums.O0: return new /*--+*/ Vector3(Center.x - x, Center.y - y, Center.z + z);
+				case OctantEnums.O1: return new /*+++*/ Vector3(Center.x + x, Center.y + y, Center.z + z);
+				case OctantEnums.O2: return new /*-++*/ Vector3(Center.x - x, Center.y + y, Center.z + z);
+				case OctantEnums.O3: return new /*-+-*/ Vector3(Center.x - x, Center.y + y, Center.z - z);
+				case OctantEnums.O4: return new /*+--*/ Vector3(Center.x + x, Center.y - y, Center.z - z);
+				case OctantEnums.O5: return new /*+-+*/ Vector3(Center.x + x, Center.y - y, Center.z + z);
+				case OctantEnums.O6: return new /*--+*/ Vector3(Center.x - x, Center.y - y, Center.z + z);
+				case OctantEnums.O7: return new /*---*/ Vector3(Center.x - x, Center.y - y, Center.z - z);
 
 			}
 
 			return new Vector3();
 
+		}
+
+		public void DrawPartitions(GridOverlay gridOverlay)
+		{
+			if (_TotalChildren > 8)
+			{
+				//Debug.Log(" Center : " + Center + " HalfWidth :" + HalfWidth);
+				///Debug.Log(" _CurrentDepth : " + _CurrentDepth + " HalfWidth :" + HalfWidth);
+				//Debug.Log(" _TotalChildren : " + _TotalChildren + "_CurrentDepth" + _CurrentDepth);
+				//Debug.Log(" sQuarterDiagonal : " + sQuarterDiagonal);
+				gridOverlay.DrawPartitioners(Center, HalfWidth);
+				for (int i = 0; i < 8; ++i )
+				{
+					if(_Nodes.ContainsKey(i))
+						_Nodes[i].DrawPartitions(gridOverlay);
+				}
+			}
 		}
 
 	}

@@ -47,7 +47,7 @@ public class MainInstance : MonoBehaviour {
 		_KeyboardCameraControl = GLCamera.GetComponent<KeyboardCameraControl>();
 		_GridOverlay._MainInstance = this;
 		CubeCenter = _GridOverlay.CubeCenter;
-		CubeWidth = _GridOverlay.CubeWidth;
+		CubeWidth = _GridOverlay.CubeDimension;
 		float _FParticleRadius = ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x / 2;
 #if DEBUG
 		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius, this);
@@ -78,12 +78,12 @@ public class MainInstance : MonoBehaviour {
 				{
 						if ((_Paint) ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0))
 						{
-							Debug.Log("SPAWNed IT!!!!");
+							//Debug.Log("SPAWNed IT!!!!");
 							//instantiate and add in the list
 							Vector3 positionToSpawn = ParticleSpawner.transform.position;
 							GameObject ParticleObject;
 							ParticleObject = Instantiate(ParticlePrefab, new Vector3(positionToSpawn.x, positionToSpawn.y, positionToSpawn.z), Quaternion.identity) as GameObject;
-							Debug.Log("ParticleObject.transform.position: " + ParticleObject.transform.position);
+							//Debug.Log("ParticleObject.transform.position: " + ParticleObject.transform.position);
 							_Particles.Add(ParticleObject);
 
 							RootOcTree.Insert(ParticleObject);
@@ -129,8 +129,19 @@ public class MainInstance : MonoBehaviour {
 		foreach (GameObject particleObj in _Particles)
 		{
 			_GridOverlay.DrawCube(particleObj.transform.position, _VParticleRadius);
-			_GridOverlay.DrawPartitioners(particleObj.transform.position,_VParticleRadius);
+			_GridOverlay.DrawPartitioners(particleObj.transform.position, _VParticleRadius);
 		}
+	}
+
+	public void DrawOctreePartitions()
+	{
+		RootOcTree.DrawPartitions(_GridOverlay);
+
+		//foreach (GameObject particleObj in _Particles)
+		//{
+		//	_GridOverlay.DrawCube(particleObj.transform.position, _VParticleRadius);
+		//	_GridOverlay.DrawPartitioners(particleObj.transform.position, _VParticleRadius);
+		//}
 	}
 
 }
