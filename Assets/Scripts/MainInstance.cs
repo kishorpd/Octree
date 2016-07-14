@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts;
@@ -11,6 +12,8 @@ public class MainInstance : MonoBehaviour {
 	public GameObject VertexPrefab;
 	public GameObject ParticleSpawner;
 	public Camera GLCamera;
+	public Text TextBox;
+
 
 	Vector3 _VParticleRadius;
 	float Center = 0.0f;
@@ -19,11 +22,11 @@ public class MainInstance : MonoBehaviour {
 	Vector3 PartitionerCenter;
 	Vector3 CubeWidth;
 
-
 	public Octree RootOcTree;
 
 	//___private
 	private List<GameObject> _Particles;
+	private List<GameObject> _Vertices;
 	private bool _Paint = false;
 
 	enum CursorMode
@@ -38,11 +41,12 @@ public class MainInstance : MonoBehaviour {
 	GridOverlay _GridOverlay;
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
-
+	bool DisplayVertices = true;
 
 	// Use this for initialization
 	void Start () {
 		_Particles = new List<GameObject>();
+		_Vertices = new List<GameObject>();
 		_GridOverlay = GLCamera.GetComponent<GridOverlay>();
 		_KeyboardCameraControl = GLCamera.GetComponent<KeyboardCameraControl>();
 		_GridOverlay._MainInstance = this;
@@ -62,6 +66,8 @@ public class MainInstance : MonoBehaviour {
 			if (ParticleSpawner.activeSelf)
 			SpawnParticleOnClick();
 		}
+
+		UpdateText();
 	}
 
 
@@ -116,9 +122,24 @@ public class MainInstance : MonoBehaviour {
 	}
 
 
+	void UpdateText()
+	{
+		TextBox.text = " Total Particles:" + RootOcTree.TotalChildren +
+			"\n Maximum Depth : " + Octree.SMaxDepthReached +
+			"\n Particles on boundary : " + Octree.STotalOverLapping +
+			"\n Split at : " + Octree.SMaxChildren;
+	}
+
+	public void Clear()
+	{
+		Application.LoadLevel(0);
+	}
+
 	public void SpawnVertex(Vector3 positionToSpawn)
 	{
-		Instantiate(VertexPrefab, new Vector3(positionToSpawn.x, positionToSpawn.y, positionToSpawn.z), Quaternion.identity);
+		//Instantiate(VertexPrefab, new Vector3(positionToSpawn.x, positionToSpawn.y, positionToSpawn.z), Quaternion.identity);
+		
+		_Vertices.Add(Instantiate(VertexPrefab, new Vector3(positionToSpawn.x, positionToSpawn.y, positionToSpawn.z), Quaternion.identity) as GameObject);
 	}
 
 	public void DrawParticlesDebug()
@@ -139,6 +160,33 @@ public class MainInstance : MonoBehaviour {
 		//	_GridOverlay.DrawCube(particleObj.transform.position, _VParticleRadius);
 		//	_GridOverlay.DrawPartitioners(particleObj.transform.position, _VParticleRadius);
 		//}
+	}
+
+	public void SwapSphereVsSprite()
+	{
+		bool isSprite = _Particles[0].transform.GetChild(0).gameObject.activeSelf;
+		foreach (GameObject particleObj in _Particles)
+		{
+
+			particleObj.transform.GetChild(0).gameObject.SetActive(!isSprite);
+			particleObj.transform.GetChild(1).gameObject.SetActive(isSprite);
+		}
+		ParticlePrefab.transform.GetChild(0).gameObject.SetActive(!isSprite);
+		ParticlePrefab.transform.GetChild(1).gameObject.SetActive(isSprite);
+	}	
+
+	public void ToggleVertices()
+	{
+		DisplayVertices = !DisplayVertices;
+		foreach (GameObject particleObj in _Vertices)
+		{
+			particleObj.gameObject.SetActive(DisplayVertices);
+		}
+	}
+
+	public void DisplayPartitions()
+	{
+		_GridOverlay.ShowPartitions = !_GridOverlay.ShowPartitions;
 	}
 
 }

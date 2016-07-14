@@ -158,6 +158,11 @@ public class GridOverlay : MonoBehaviour
 		}
 	}
 
+	public void ParticleDebugLines()
+	{
+		ShowParticleDebugLines = !ShowParticleDebugLines;
+	}
+
 	void OnPostRender()
 	{
 		CreateLineMaterial();

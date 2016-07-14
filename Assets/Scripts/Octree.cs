@@ -47,15 +47,17 @@ namespace Assets.Scripts
 		static float SRadius = 0;
 		static float SRadiusDiagonal = 0;
 		static float SRadiusSquare = 0;
-		static int SMaxChildren = 8;
 		static int SMaxDepthToStopAt = 10;
-		static int SMaxDepthReached = 0;
-		static bool SDebugVertices { get; set; }
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
+
+		public static int STotalOverLapping = 0;
+		public static int SMaxChildren = 1;
+		public static int SMaxDepthReached = 0;
+		public static bool SDebugVertices { get; set; }
 
 
 		bool _OverFlow = false;
-		int _TotalChildren = 0;
+		public int TotalChildren = 0;
 		int _CurrentDepth = 0;
 
 		public static MainInstance SMainInstance { get; set; }
@@ -140,14 +142,14 @@ namespace Assets.Scripts
 					}
 						_Children.Clear();
 				}
-				++_TotalChildren;
+				++TotalChildren;
 			}
 			else 
 			{
 				_Children.Add(particleObject);
 				//Debug.Log(" _Children.Count : " + _Children.Count + " _CurrentDepth : " + _CurrentDepth);
-				++_TotalChildren;
-				if (_TotalChildren == SMaxChildren)
+				++TotalChildren;
+				if (TotalChildren == SMaxChildren)
 				{
 					_OverFlow = true;
 				}
@@ -261,7 +263,7 @@ namespace Assets.Scripts
 			//		now check the octant for the diagonal point of each axis
 			//		i.e. check overlapping for (diagonal) 
 			//	}
-
+			SDebugVertices = true;
 			byte octants = Convert.ToByte("00000000", 2);
 			//Debug.Log("___octants.12_1: " + octants);
 			if (ExistsInAllQuadrants(particlePosition))
@@ -367,6 +369,7 @@ namespace Assets.Scripts
 					//insert the object into that specific object
 					if (!_OverLappingParticles.ContainsKey(i))
 					{
+						++STotalOverLapping;
 						_OverLappingParticles.Add(i, new List<GameObject>());
 					}
 					_OverLappingParticles[i].Add(particleObj);
@@ -376,7 +379,7 @@ namespace Assets.Scripts
 			//Debug.Log("___octants.10 : " + Convert.ToString(octants, 2));
 			//Debug.Log("___octants.12_2: " + octants);
 
-			SDebugVertices = false;
+			//SDebugVertices = false;
 
 			return octants;
 		}
@@ -439,13 +442,13 @@ namespace Assets.Scripts
 			//	  /| |      / | |	  /| |      / | |		   |
 			//	 +----------+ | |	 +----------+ | |		   |
 			//	 | | |      | | |	 | | |      | | |		   |  /+Z
-			//	 | | +----2-|-|-+	 | | +----1-|-|-+		2  | /  1
+			//	 | | +----2-|-|-+	 | | +----1-|-|-+	 -++2  | /  1  +++
 			//	 | |/_______|_|/ 	 | |/_______|_|/	-x_____|/_____+x
-			//	 |/    3    |/   	 |/    0    |/		   3  /|  0
-			//	 +---------+	   	 +---------+		   -z/ |
-			//												/  |
+			//	 |/    3    |/   	 |/    0    |/	   3 -+-  /|  0 ++-
+			//	 +---------+	   	 +---------+		   -z/ |  
+			//										 6 --+	/  |  5 +-+
 			//												   |   
-			//	    +-----------+       +-----------+		   |
+			//	    +-----------+       +-----------+  7 ---   |  4 +--
 			//	   /_|________/ |	   /_|________/ |		   |
 			//	  /| |      / | |	  /| |      / | |		   | -Y
 			//	 +----------+ | |	 +----------+ | |		
@@ -456,6 +459,7 @@ namespace Assets.Scripts
 			//	 +---------+	   	 +---------+	   
 
 
+			Debug.Log("_CurrentDepth" + _CurrentDepth + "Center" + Center + "octant" + octant);
 
 			switch (octantCase)
 			{
@@ -477,7 +481,7 @@ namespace Assets.Scripts
 
 		public void DrawPartitions(GridOverlay gridOverlay)
 		{
-			if (_TotalChildren > 8)
+			if (TotalChildren > 0)
 			{
 				//Debug.Log(" Center : " + Center + " HalfWidth :" + HalfWidth);
 				///Debug.Log(" _CurrentDepth : " + _CurrentDepth + " HalfWidth :" + HalfWidth);
