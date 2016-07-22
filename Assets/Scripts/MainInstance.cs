@@ -128,6 +128,8 @@ public class MainInstance : MonoBehaviour {
 			"\n Maximum Depth : " + Octree.SMaxDepthReached +
 			"\n Particles on boundary : " + Octree.STotalOverLapping +
 			"\n Split at : " + Octree.SMaxChildren;
+
+		RootOcTree.DisplayInfoOfEachParticle();
 	}
 
 	public void Clear()
@@ -153,7 +155,11 @@ public class MainInstance : MonoBehaviour {
 
 	public void DrawOctreePartitions()
 	{
+		_GridOverlay.SetColor(Color.cyan);
 		RootOcTree.DrawPartitions(_GridOverlay);
+		_GridOverlay.SetColor(Color.green);
+		RootOcTree.DrawTree(_GridOverlay);
+		_GridOverlay.SetColor(Color.blue);
 
 		//foreach (GameObject particleObj in _Particles)
 		//{

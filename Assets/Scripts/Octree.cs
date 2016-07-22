@@ -51,7 +51,7 @@ namespace Assets.Scripts
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
 
 		public static int STotalOverLapping = 0;
-		public static int SMaxChildren = 1;
+		public static int SMaxChildren = 2;
 		public static int SMaxDepthReached = 0;
 		public static bool SDebugVertices { get; set; }
 
@@ -117,16 +117,7 @@ namespace Assets.Scripts
 			int octantOfParticleObj = GetOctant(particleObject.transform.position);
 			if (_OverFlow) //total children > SMaxChildren
 			{
-				if (_Children.Count == 0)
-				{
-					//insert in children
-					
-					if (!_Nodes.ContainsKey(octantOfParticleObj))
-						_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(particleObject.transform.position)), HalfWidth / 2, this);
-
-					_Nodes[octantOfParticleObj].Insert(particleObject);
-				}
-				else 
+				if (_Children.Count != 0)
 				{
 					//create new octrees from private constructor maybe
 					foreach( GameObject obj in _Children)
@@ -134,7 +125,7 @@ namespace Assets.Scripts
 						octantOfParticleObj = GetOctant(obj.transform.position);
 
 						if (!_Nodes.ContainsKey(octantOfParticleObj))
-							_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(particleObject.transform.position)), HalfWidth / 2, this);
+							_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(obj.transform.position)), HalfWidth / 2, this);
 
 						_Nodes[octantOfParticleObj].Insert(obj);
 
@@ -142,6 +133,13 @@ namespace Assets.Scripts
 					}
 						_Children.Clear();
 				}
+				
+				//insert in children
+					octantOfParticleObj = GetOctant(particleObject.transform.position);
+					if (!_Nodes.ContainsKey(octantOfParticleObj))
+						_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(particleObject.transform.position)), HalfWidth / 2, this);
+
+					_Nodes[octantOfParticleObj].Insert(particleObject);
 				++TotalChildren;
 			}
 			else 
@@ -488,10 +486,65 @@ namespace Assets.Scripts
 				//Debug.Log(" _TotalChildren : " + _TotalChildren + "_CurrentDepth" + _CurrentDepth);
 				//Debug.Log(" sQuarterDiagonal : " + sQuarterDiagonal);
 				gridOverlay.DrawPartitioners(Center, HalfWidth);
-				for (int i = 0; i < 8; ++i )
+				for (int i = 0; i < 8; ++i)
 				{
-					if(_Nodes.ContainsKey(i))
+					if (_Nodes.ContainsKey(i))
 						_Nodes[i].DrawPartitions(gridOverlay);
+				}
+			}
+		}
+
+
+		public void DrawTree(GridOverlay gridOverlay)
+		{
+			if (TotalChildren > 0)
+			{
+				//Debug.Log(" Center : " + Center + " HalfWidth :" + HalfWidth);
+				///Debug.Log(" _CurrentDepth : " + _CurrentDepth + " HalfWidth :" + HalfWidth);
+				//Debug.Log(" _TotalChildren : " + _TotalChildren + "_CurrentDepth" + _CurrentDepth);
+				//Debug.Log(" sQuarterDiagonal : " + sQuarterDiagonal);
+				for (int i = 0; i < 8; ++i)
+				{
+					if (_Nodes.ContainsKey(i))
+					{ 
+						_Nodes[i].DrawTree(gridOverlay);
+					gridOverlay.DrawLinePQ(Center, _Nodes[i].Center);
+					}
+				}
+
+				//Debug.Log(" _Children : " + _Children.Count + " Depth : " + _CurrentDepth);
+				foreach (GameObject child in _Children)
+				{
+					//Debug.Log("center : " + Center + "child.transform.position : " + child.transform.position);
+
+					gridOverlay.DrawLinePQ(Center, child.transform.position);
+				} 
+				
+			}
+		}
+
+		public void DisplayInfoOfEachParticle()
+		{
+			if (TotalChildren > 0)
+			{
+				//Debug.Log(" Center : " + Center + " HalfWidth :" + HalfWidth);
+				///Debug.Log(" _CurrentDepth : " + _CurrentDepth + " HalfWidth :" + HalfWidth);
+				//Debug.Log(" _TotalChildren : " + _TotalChildren + "_CurrentDepth" + _CurrentDepth);
+				//Debug.Log(" sQuarterDiagonal : " + sQuarterDiagonal);
+				for (int i = 0; i < 8; ++i)
+				{
+					if (_Nodes.ContainsKey(i))
+						_Nodes[i].DisplayInfoOfEachParticle();
+				}
+
+
+				//	Debug.Log(" Total children : " + TotalChildren);
+				//Debug.Log("-=======================================-");
+				//Debug.Log(" _Children : " + _Children.Count + " Depth : " + _CurrentDepth);
+				foreach(GameObject child in _Children)
+				{
+					TextMesh textMesh = child.transform.GetChild(2).GetComponent<TextMesh>();
+					textMesh.text = " Depth : " + _CurrentDepth + "\nOctant : " + GetOctant(child.transform.position);
 				}
 			}
 		}

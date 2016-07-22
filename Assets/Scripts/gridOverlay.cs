@@ -6,14 +6,14 @@ public class GridOverlay : MonoBehaviour
 {
 	
 	// x ht, y , z
-	public const float Center = 22.0f;
+	 const float Center = 22.0f;
 	public const float MaxDimension = 17.0f;
 	public Vector3 CubeDimension = new Vector3(MaxDimension/2,MaxDimension/2,MaxDimension/2);
 
 	
-	private Material lineMaterial;
 	public MainInstance _MainInstance;
 
+	public Material lineMaterial;
 	private Color mainColor = new Color(0f, 1f, 0f, 1f);
 	private Color subColor = new Color(0f, 0.5f, 0f, 1f);
 
@@ -32,10 +32,16 @@ public class GridOverlay : MonoBehaviour
 	}
 
 
-	void DrawLine(Vector3 center, Vector3 width)
+	 void DrawLine(Vector3 center, Vector3 width)
 	{
 		GL.Vertex(center + width);
 		GL.Vertex(center - width);
+	}
+
+	public void DrawLinePQ(Vector3 center, Vector3 width)
+	{
+		GL.Vertex(center);
+		GL.Vertex(width);
 	}
 
 	void DrawPlaneXZ(Vector3 center, Vector3 width)
@@ -161,6 +167,12 @@ public class GridOverlay : MonoBehaviour
 	public void ParticleDebugLines()
 	{
 		ShowParticleDebugLines = !ShowParticleDebugLines;
+	}
+
+	public void SetColor(Color color)
+	{
+		GL.Color(color);
+
 	}
 
 	void OnPostRender()
