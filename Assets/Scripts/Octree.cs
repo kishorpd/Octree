@@ -51,7 +51,7 @@ namespace Assets.Scripts
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
 
 		public static int STotalOverLapping = 0;
-		public static int SMaxChildren = 2;
+		public static int SMaxChildren = 3;
 		public static int SMaxDepthReached = 0;
 		public static bool SDebugVertices { get; set; }
 
@@ -77,13 +77,17 @@ namespace Assets.Scripts
 
 		public Octree(Vector3 center, Vector3 halfWidth, float particleRadius, MainInstance main)
 		{
+			if (SMaxChildren < 1)
+			{
+				SMaxChildren = 1;
+			}
 			//constructor of root 
 			Center = center;
 			HalfWidth = halfWidth;
 			SRadius = particleRadius;
 			SRadiusSquare = SRadius * SRadius;
 			SRadiusDiagonal = SRadius / Mathf.Sqrt(2);
-			Debug.Log("SRadius : " + SRadius);
+			//Debug.Log("SRadius : " + SRadius);
 			SMainInstance = main;
 			SDebugVertices = false;
 		}
@@ -157,13 +161,13 @@ namespace Assets.Scripts
 			//particleObject.get sprite and radius from it
 			//check for overlapping octants
 			//drop in given overlapping octant
-			OctantsOverlapping(particleObject);
+			//OctantsOverlapping(particleObject);     <------------removed overlapping particles not needed for current implementation can be activated later for precision.
 			return false;
 		}
 
 		int GetOctant(Vector3 position)
 		{
-			if (SDebugVertices) SMainInstance.SpawnVertex(position);
+			//if (SDebugVertices) SMainInstance.SpawnVertex(position);
 
 			return ((position.y < Center.y) ? (InQuadrantXZ(position) + 4) : (InQuadrantXZ(position)));
 		}
@@ -457,7 +461,7 @@ namespace Assets.Scripts
 			//	 +---------+	   	 +---------+	   
 
 
-			Debug.Log("_CurrentDepth" + _CurrentDepth + "Center" + Center + "octant" + octant);
+			//Debug.Log("_CurrentDepth" + _CurrentDepth + "Center" + Center + "octant" + octant);
 
 			switch (octantCase)
 			{
@@ -506,9 +510,9 @@ namespace Assets.Scripts
 				for (int i = 0; i < 8; ++i)
 				{
 					if (_Nodes.ContainsKey(i))
-					{ 
+					{
 						_Nodes[i].DrawTree(gridOverlay);
-					gridOverlay.DrawLinePQ(Center, _Nodes[i].Center);
+						gridOverlay.DrawLinePQ(Center, _Nodes[i].Center);
 					}
 				}
 
@@ -518,8 +522,8 @@ namespace Assets.Scripts
 					//Debug.Log("center : " + Center + "child.transform.position : " + child.transform.position);
 
 					gridOverlay.DrawLinePQ(Center, child.transform.position);
-				} 
-				
+				}
+
 			}
 		}
 
@@ -549,6 +553,25 @@ namespace Assets.Scripts
 			}
 		}
 
+
+
+		public void Clear()
+		{
+			if (TotalChildren > 0)
+			{
+				
+				for (int i = 0; i < 8; ++i)
+				{
+					if (_Nodes.ContainsKey(i))
+					{
+						_Nodes[i].Clear();
+					}
+				}
+
+				_Children.Clear();
+
+			}
+		}
+
 	}
 }
-

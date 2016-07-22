@@ -41,7 +41,8 @@ public class MainInstance : MonoBehaviour {
 	GridOverlay _GridOverlay;
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
-	bool DisplayVertices = true;
+	bool _DisplayVertices = true;
+	bool _ShowTextMesh = true;
 
 	// Use this for initialization
 	void Start () {
@@ -52,15 +53,32 @@ public class MainInstance : MonoBehaviour {
 		_GridOverlay._MainInstance = this;
 		CubeCenter = _GridOverlay.CubeCenter;
 		CubeWidth = _GridOverlay.CubeDimension;
-		float _FParticleRadius = ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x / 2;
-		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius, this);
 		//RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius);
+		RootOcTree = null;
+		float _FParticleRadius = ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x / 2;
 		_VParticleRadius = new Vector3(_FParticleRadius, _FParticleRadius, _FParticleRadius);
 
 	}
 	
 	// Update is called once per frame
 	void Update () {
+
+		float _FParticleRadius = ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x / 2;
+
+		if (RootOcTree != null)
+		{
+			RootOcTree.Clear();
+		}
+
+		RootOcTree = null;
+		
+		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius, this);
+
+		foreach (GameObject obj in _Particles)
+		{
+			RootOcTree.Insert(obj);
+		}
+
 		if (_KeyboardCameraControl.LockCursor)
 		{ 
 			if (ParticleSpawner.activeSelf)
@@ -157,15 +175,19 @@ public class MainInstance : MonoBehaviour {
 	{
 		_GridOverlay.SetColor(Color.cyan);
 		RootOcTree.DrawPartitions(_GridOverlay);
-		_GridOverlay.SetColor(Color.green);
-		RootOcTree.DrawTree(_GridOverlay);
-		_GridOverlay.SetColor(Color.blue);
-
+		
 		//foreach (GameObject particleObj in _Particles)
 		//{
 		//	_GridOverlay.DrawCube(particleObj.transform.position, _VParticleRadius);
 		//	_GridOverlay.DrawPartitioners(particleObj.transform.position, _VParticleRadius);
 		//}
+	}
+
+	public void DrawOctreeHierarchy()
+	{
+		_GridOverlay.SetColor(Color.green);
+		RootOcTree.DrawTree(_GridOverlay);
+		_GridOverlay.SetColor(Color.blue);
 	}
 
 	public void SwapSphereVsSprite()
@@ -183,16 +205,42 @@ public class MainInstance : MonoBehaviour {
 
 	public void ToggleVertices()
 	{
-		DisplayVertices = !DisplayVertices;
+		_DisplayVertices = !_DisplayVertices;
 		foreach (GameObject particleObj in _Vertices)
 		{
-			particleObj.gameObject.SetActive(DisplayVertices);
+			particleObj.gameObject.SetActive(_DisplayVertices);
 		}
 	}
 
 	public void DisplayPartitions()
 	{
 		_GridOverlay.ShowPartitions = !_GridOverlay.ShowPartitions;
+	}
+
+	public void DisplayHierarchy()
+	{
+		_GridOverlay.ShowHierarchy = !_GridOverlay.ShowHierarchy;
+
+	}
+
+	public void DisplayMeshText()
+	{
+		_ShowTextMesh = !_ShowTextMesh;
+		
+		foreach (GameObject particleObj in _Particles)
+		{
+
+			particleObj.transform.GetChild(2).gameObject.SetActive(_ShowTextMesh);
+			particleObj.transform.GetChild(3).gameObject.SetActive(_ShowTextMesh);
+		}
+		ParticlePrefab.transform.GetChild(2).gameObject.SetActive(_ShowTextMesh);
+		ParticlePrefab.transform.GetChild(3).gameObject.SetActive(_ShowTextMesh);
+	}
+
+
+	public void MoveParticles()
+	{
+		ParticleMove.ToggleMove();
 	}
 
 }

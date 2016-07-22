@@ -24,6 +24,7 @@ public class GridOverlay : MonoBehaviour
 	bool completed = true;
 
 	public bool ShowPartitions = true;
+	public bool ShowHierarchy = true;
 	public bool ShowParticleDebugLines = true;
 
 	void Start()
@@ -188,9 +189,13 @@ public class GridOverlay : MonoBehaviour
 		//Debug.Log("OnPostRender-> Center : " + PartitionerCenter + " HalfWidth :" + CubeWidth);
 		//DrawPartitioners(PartitionerCenter, CubeWidth);
 		DrawCube(CubeCenter, CubeWidth);
-		
+
+		SetColor(Color.red);
 		if (ShowParticleDebugLines)
 			_MainInstance.DrawParticlesDebug();
+
+		if (ShowHierarchy)
+			_MainInstance.DrawOctreeHierarchy();
 
 		if (ShowPartitions)
 		{
