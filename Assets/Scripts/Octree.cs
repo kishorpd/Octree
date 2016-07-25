@@ -10,6 +10,7 @@ using System.Text;
 
 namespace Assets.Scripts
 {
+	[Serializable]
 	public class Octree
 	{
 		//           Quadrants considered
@@ -47,31 +48,31 @@ namespace Assets.Scripts
 		static float SRadius = 0;
 		static float SRadiusDiagonal = 0;
 		static float SRadiusSquare = 0;
-		static int SMaxDepthToStopAt = 10;
+		public static int SMaxDepthToStopAt = 0;
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
 
 		public static int STotalOverLapping = 0;
 		public static int SMaxChildren = 3;
 		public static int SMaxDepthReached = 0;
 		public static bool SDebugVertices { get; set; }
+		public static bool SCheckBoundary = false;
 
 
 		bool _OverFlow = false;
 		public int TotalChildren = 0;
 		int _CurrentDepth = 0;
-
 		public static MainInstance SMainInstance { get; set; }
 
 		enum OctantEnums : byte
 		{
-			O0 = 0	,//= 0x001, // 00000001
-			O1		,//= 0x002, // 00000010
-			O2		,//= 0x004, // 00000100
-			O3		,//= 0x008, // 00001000
-			O4		,//= 0x010, // 00010000
-			O5		,//= 0x020, // 00100000
-			O6		,//= 0x040, // 01000000
-			O7		 //= 0x080, // 10000000
+			O0 = 0	,//= 0x001, // 00000001		   
+			O1		,//= 0x002, // 00000010		   
+			O2		,//= 0x004, // 00000100		   
+			O3		,//= 0x008, // 00001000		   
+			O4		,//= 0x010, // 00010000		   
+			O5		,//= 0x020, // 00100000		   
+			O6		,//= 0x040, // 01000000		   
+			O7		 //= 0x080, // 10000000		   
 		}
 
 
@@ -81,6 +82,7 @@ namespace Assets.Scripts
 			{
 				SMaxChildren = 1;
 			}
+			SMaxDepthReached = 0;
 			//constructor of root 
 			Center = center;
 			HalfWidth = halfWidth;
@@ -121,29 +123,37 @@ namespace Assets.Scripts
 			int octantOfParticleObj = GetOctant(particleObject.transform.position);
 			if (_OverFlow) //total children > SMaxChildren
 			{
-				if (_Children.Count != 0)
+				if (_CurrentDepth < SMaxDepthToStopAt)
 				{
-					//create new octrees from private constructor maybe
-					foreach( GameObject obj in _Children)
+					if (_Children.Count != 0)
 					{
-						octantOfParticleObj = GetOctant(obj.transform.position);
+						//create new octrees from private constructor maybe
+						foreach (GameObject obj in _Children)
+						{
+							octantOfParticleObj = GetOctant(obj.transform.position);
 
-						if (!_Nodes.ContainsKey(octantOfParticleObj))
-							_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(obj.transform.position)), HalfWidth / 2, this);
+							if (!_Nodes.ContainsKey(octantOfParticleObj))
+								_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(obj.transform.position)), HalfWidth / 2, this);
 
-						_Nodes[octantOfParticleObj].Insert(obj);
+							_Nodes[octantOfParticleObj].Insert(obj);
 
-				
-					}
+
+						}
 						_Children.Clear();
-				}
-				
-				//insert in children
+					}
+
+					//insert in children
 					octantOfParticleObj = GetOctant(particleObject.transform.position);
 					if (!_Nodes.ContainsKey(octantOfParticleObj))
 						_Nodes[octantOfParticleObj] = new Octree(GetCenterOfOctant(GetOctant(particleObject.transform.position)), HalfWidth / 2, this);
 
 					_Nodes[octantOfParticleObj].Insert(particleObject);
+				}
+				else 
+				{
+					//once it reaches the max depth keep feeling the children ...this limits the traversal and also helps needed amount of optimization
+					_Children.Add(particleObject);
+				}
 				++TotalChildren;
 			}
 			else 
@@ -161,7 +171,8 @@ namespace Assets.Scripts
 			//particleObject.get sprite and radius from it
 			//check for overlapping octants
 			//drop in given overlapping octant
-			//OctantsOverlapping(particleObject);     <------------removed overlapping particles not needed for current implementation can be activated later for precision.
+			if (SCheckBoundary)
+			OctantsOverlapping(particleObject); //    <------------removed overlapping particles not needed for current implementation can be activated later for precision.
 			return false;
 		}
 
@@ -170,6 +181,21 @@ namespace Assets.Scripts
 			//if (SDebugVertices) SMainInstance.SpawnVertex(position);
 
 			return ((position.y < Center.y) ? (InQuadrantXZ(position) + 4) : (InQuadrantXZ(position)));
+		}
+
+
+
+		long GetOctantHierarchy(Vector3 position)
+		{
+			long OctantHierarchy = 0;
+			if (Parent == null)
+				return (GetOctant(position));
+			else
+				OctantHierarchy = 10 * Parent.GetOctantHierarchy(position);
+			
+			OctantHierarchy += GetOctant(position);
+
+			return OctantHierarchy;
 		}
 
 
@@ -545,10 +571,23 @@ namespace Assets.Scripts
 				//	Debug.Log(" Total children : " + TotalChildren);
 				//Debug.Log("-=======================================-");
 				//Debug.Log(" _Children : " + _Children.Count + " Depth : " + _CurrentDepth);
-				foreach(GameObject child in _Children)
+				foreach (GameObject child in _Children)
 				{
 					TextMesh textMesh = child.transform.GetChild(2).GetComponent<TextMesh>();
-					textMesh.text = " Depth : " + _CurrentDepth + "\nOctant : " + GetOctant(child.transform.position);
+					if (SMainInstance.RootOcTree.GetOctant(child.transform.position) == 0)
+					{
+						textMesh.text =
+							"Depth : " + _CurrentDepth +
+							"\nGetOctantHierarchy :\n 0" + GetOctantHierarchy(child.transform.position) +
+							"\nCurrent Octant : " + GetOctant(child.transform.position);
+					}
+					else
+					{
+						textMesh.text =
+							"Depth : " + _CurrentDepth +
+							"\nGetOctantHierarchy :\n " + GetOctantHierarchy(child.transform.position) +
+							"\nCurrent Octant : " + GetOctant(child.transform.position);
+					}
 				}
 			}
 		}
@@ -569,7 +608,11 @@ namespace Assets.Scripts
 				}
 
 				_Children.Clear();
-
+				if (SCheckBoundary)
+				{ 
+					_OverLappingParticles.Clear();
+					STotalOverLapping = 0;
+				}
 			}
 		}
 

@@ -23,9 +23,9 @@ public class GridOverlay : MonoBehaviour
 	int i = 0;
 	bool completed = true;
 
-	public bool ShowPartitions = true;
+	public bool ShowPartitions = false;
 	public bool ShowHierarchy = true;
-	public bool ShowParticleDebugLines = true;
+	 bool ShowParticleDebugLines = false;
 
 	void Start()
 	{

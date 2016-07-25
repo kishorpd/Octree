@@ -3,6 +3,10 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts;
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 
 public class MainInstance : MonoBehaviour {
@@ -13,6 +17,12 @@ public class MainInstance : MonoBehaviour {
 	public GameObject ParticleSpawner;
 	public Camera GLCamera;
 	public Text TextBox;
+	public Text TextBoxCurrentMaxDepth;
+	public Text TextBoxCurrentSplitAt;
+	public InputField InputMaxDepth;
+	public InputField InputMaxSplitAt;
+	public Slider InputMaxDepthSlider;
+	public Slider InputSplitAtSlider;
 
 
 	Vector3 _VParticleRadius;
@@ -28,11 +38,19 @@ public class MainInstance : MonoBehaviour {
 	private List<GameObject> _Particles;
 	private List<GameObject> _Vertices;
 	private bool _Paint = false;
+	private bool _UpdateDepth = false;
+	private bool _UpdateSplitAt = false;
+	private bool _Clear = false;
+
+
+	private int _NewMaxDepth = 0;
+	private int _NewSplitAt = 0;
+
 
 	enum CursorMode
 	{
 		NORMAL,
-		DRAGGING
+		SPAWN_MULTIPLE
 	}
 
 	CursorMode _CursorMode = CursorMode.NORMAL;
@@ -42,7 +60,7 @@ public class MainInstance : MonoBehaviour {
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
 	bool _DisplayVertices = true;
-	bool _ShowTextMesh = true;
+	bool _ShowTextMesh = false;
 
 	// Use this for initialization
 	void Start () {
@@ -57,6 +75,13 @@ public class MainInstance : MonoBehaviour {
 		RootOcTree = null;
 		float _FParticleRadius = ParticlePrefab.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().bounds.size.x / 2;
 		_VParticleRadius = new Vector3(_FParticleRadius, _FParticleRadius, _FParticleRadius);
+		TextBoxCurrentMaxDepth.text = "Depth : " + Octree.SMaxDepthToStopAt;
+		TextBoxCurrentSplitAt.text = "Split after : " + Octree.SMaxChildren;
+		InputMaxDepth.text = Octree.SMaxDepthToStopAt.ToString();
+		InputMaxSplitAt.text = Octree.SMaxChildren.ToString();
+
+		ParticlePrefab.transform.GetChild(2).gameObject.SetActive(_ShowTextMesh);
+		ParticlePrefab.transform.GetChild(3).gameObject.SetActive(_ShowTextMesh);
 
 	}
 	
@@ -71,8 +96,35 @@ public class MainInstance : MonoBehaviour {
 		}
 
 		RootOcTree = null;
-		
+
+		if (_Clear)
+		{
+			_Clear = false;
+			foreach (GameObject particleObj in _Particles)
+			{ 
+				Destroy(particleObj);
+			}
+
+			_Particles.Clear();
+		}
+
 		RootOcTree = new Octree(CubeCenter, CubeWidth, _FParticleRadius, this);
+
+		if (_UpdateDepth)
+		{
+			_UpdateDepth = false;
+			Octree.SMaxDepthToStopAt = Convert.ToInt32(InputMaxDepthSlider.value * _NewMaxDepth);
+			TextBoxCurrentMaxDepth.text = "Depth : " + Octree.SMaxDepthToStopAt;
+		}
+
+		if (_UpdateSplitAt)
+		{
+			_UpdateSplitAt = false;
+			_NewSplitAt -= 1;
+			Octree.SMaxChildren = Convert.ToInt32(InputSplitAtSlider.value * _NewSplitAt) + 1;
+			TextBoxCurrentSplitAt.text = "Split after : " + (Octree.SMaxChildren);
+			//Octree.SMaxChildren += 1;
+		}
 
 		foreach (GameObject obj in _Particles)
 		{
@@ -86,6 +138,7 @@ public class MainInstance : MonoBehaviour {
 		}
 
 		UpdateText();
+		
 	}
 
 
@@ -117,14 +170,28 @@ public class MainInstance : MonoBehaviour {
 							//_QuadTree.ParticleUnderCursor(hit.point);
 							// 
 							Debug.Log("CHANGEDS!!!!");
-							_CursorMode = CursorMode.DRAGGING;
+							_CursorMode = CursorMode.SPAWN_MULTIPLE;
 						}
 					break;
 				}
 
-			case CursorMode.DRAGGING:
+			case CursorMode.SPAWN_MULTIPLE:
 				{
-					
+					if ((_Paint) ? Input.GetMouseButton(0) : Input.GetMouseButtonDown(0))
+					{
+						//Debug.Log("SPAWNed IT!!!!");
+						//instantiate and add in the list
+						Vector3 positionToSpawn = ParticleSpawner.transform.position;
+						GameObject ParticleObject;
+						float tempWidth = CubeWidth.x;
+						for (int i = -10; i < 10; ++i)
+						{
+							ParticleObject = Instantiate(ParticlePrefab, new Vector3( UnityEngine.Random.Range(-tempWidth, tempWidth), UnityEngine.Random.Range(-tempWidth, tempWidth), UnityEngine.Random.Range(-tempWidth, tempWidth)), Quaternion.identity) as GameObject;
+							_Particles.Add(ParticleObject);
+							RootOcTree.Insert(ParticleObject);
+						}
+
+					}
 
 					if (Input.GetMouseButtonUp(1))
 					{
@@ -142,7 +209,17 @@ public class MainInstance : MonoBehaviour {
 
 	void UpdateText()
 	{
+		long size = 0;
+		
+		using (Stream s = new MemoryStream())
+		{
+			BinaryFormatter formatter = new BinaryFormatter();
+			formatter.Serialize(s, RootOcTree);
+			size = s.Length;
+		}
+
 		TextBox.text = " Total Particles:" + RootOcTree.TotalChildren +
+			"\n Total Size : " + size +
 			"\n Maximum Depth : " + Octree.SMaxDepthReached +
 			"\n Particles on boundary : " + Octree.STotalOverLapping +
 			"\n Split at : " + Octree.SMaxChildren;
@@ -152,7 +229,8 @@ public class MainInstance : MonoBehaviour {
 
 	public void Clear()
 	{
-		Application.LoadLevel(0);
+		_Clear = true;
+		//Application.LoadLevel(0);
 	}
 
 	public void SpawnVertex(Vector3 positionToSpawn)
@@ -243,4 +321,41 @@ public class MainInstance : MonoBehaviour {
 		ParticleMove.ToggleMove();
 	}
 
+	public void ChangeMaxDepth()
+	{
+		_UpdateDepth = true;
+		_NewMaxDepth = Convert.ToInt32(InputMaxDepth.text);
+		if (_NewMaxDepth < 0)
+		{
+			_NewMaxDepth = 0;
+			InputMaxDepth.text = "" + _NewMaxDepth;
+		}
+	}
+
+	public void ChangeSplitAt()
+	{
+		_UpdateSplitAt = true;
+		_NewSplitAt = Convert.ToInt32(InputMaxSplitAt.text);
+		InputMaxSplitAt.text = "" + (_NewSplitAt + 1);
+
+		if (_NewSplitAt < 1)
+		{
+			_NewSplitAt = 2;
+			InputMaxSplitAt.text = "" + _NewSplitAt;
+		}
+
+	}
+	
+	public void ChangeSplitWithSlider()
+	{
+		_UpdateSplitAt = true;
+		_NewSplitAt = Convert.ToInt32(InputMaxSplitAt.text);
+
+		if (_NewSplitAt < 1)
+		{
+			_NewSplitAt = 2;
+			InputMaxSplitAt.text = "" + _NewSplitAt;
+		}
+
+	}
 }
