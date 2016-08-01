@@ -37,7 +37,7 @@ public class MainInstance : MonoBehaviour {
 	//___private
 	private List<GameObject> _Particles;
 	private List<GameObject> _Vertices;
-	private bool _Paint = false;
+	private bool _Paint = true;
 	private bool _UpdateDepth = false;
 	private bool _UpdateSplitAt = false;
 	private bool _Clear = false;
@@ -61,6 +61,10 @@ public class MainInstance : MonoBehaviour {
 	RaycastHit hit; // initializing the raycasthit
 	bool _DisplayVertices = true;
 	bool _ShowTextMesh = false;
+
+
+	static public bool SShowTraversal = false;
+	static public bool SShowSnap = false;
 
 	// Use this for initialization
 	void Start () {
@@ -128,6 +132,8 @@ public class MainInstance : MonoBehaviour {
 
 		foreach (GameObject obj in _Particles)
 		{
+			obj.gameObject.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.white;
+
 			RootOcTree.Insert(obj);
 		}
 
@@ -139,6 +145,10 @@ public class MainInstance : MonoBehaviour {
 
 		UpdateText();
 		
+		//frustum
+		//if (_ShowTraversal)
+		if (RootOcTree.FrustumLiesIn(DrawFrustum.AllPoints))
+			RootOcTree.IsWithinFrustum(DrawFrustum.AllPoints);
 	}
 
 
@@ -188,6 +198,7 @@ public class MainInstance : MonoBehaviour {
 						{
 							ParticleObject = Instantiate(ParticlePrefab, new Vector3( UnityEngine.Random.Range(-tempWidth, tempWidth), UnityEngine.Random.Range(-tempWidth, tempWidth), UnityEngine.Random.Range(-tempWidth, tempWidth)), Quaternion.identity) as GameObject;
 							_Particles.Add(ParticleObject);
+
 							RootOcTree.Insert(ParticleObject);
 						}
 
@@ -209,19 +220,19 @@ public class MainInstance : MonoBehaviour {
 
 	void UpdateText()
 	{
-		long size = 0;
-		
-		using (Stream s = new MemoryStream())
-		{
-			BinaryFormatter formatter = new BinaryFormatter();
-			formatter.Serialize(s, RootOcTree);
-			size = s.Length;
-		}
+		//long size = 0;
+		//
+		//using (Stream s = new MemoryStream())
+		//{
+		//	BinaryFormatter formatter = new BinaryFormatter();
+		//	formatter.Serialize(s, RootOcTree);
+		//	size = s.Length;
+		//}
 
 		TextBox.text = " Total Particles:" + RootOcTree.TotalChildren +
-			"\n Total Size : " + size +
+			//"\n Total Size : " + size +
 			"\n Maximum Depth : " + Octree.SMaxDepthReached +
-			"\n Particles on boundary : " + Octree.STotalOverLapping +
+			//"\n Particles on boundary : " + Octree.STotalOverLapping +
 			"\n Split at : " + Octree.SMaxChildren;
 
 		RootOcTree.DisplayInfoOfEachParticle();
@@ -304,7 +315,7 @@ public class MainInstance : MonoBehaviour {
 	public void DisplayMeshText()
 	{
 		_ShowTextMesh = !_ShowTextMesh;
-		
+
 		foreach (GameObject particleObj in _Particles)
 		{
 
@@ -313,6 +324,18 @@ public class MainInstance : MonoBehaviour {
 		}
 		ParticlePrefab.transform.GetChild(2).gameObject.SetActive(_ShowTextMesh);
 		ParticlePrefab.transform.GetChild(3).gameObject.SetActive(_ShowTextMesh);
+	}
+
+
+	public void DisplayTraversal()
+	{
+		SShowTraversal = !SShowTraversal;
+	}
+
+
+	public void DisplaySnap()
+	{
+		SShowSnap = !SShowSnap;
 	}
 
 

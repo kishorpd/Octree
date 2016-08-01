@@ -48,7 +48,7 @@ namespace Assets.Scripts
 		static float SRadius = 0;
 		static float SRadiusDiagonal = 0;
 		static float SRadiusSquare = 0;
-		public static int SMaxDepthToStopAt = 0;
+		public static int SMaxDepthToStopAt = 8;
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
 
 		public static int STotalOverLapping = 0;
@@ -593,6 +593,185 @@ namespace Assets.Scripts
 		}
 
 
+
+		public bool FrustumLiesIn(List<GameObject> AllPoints)
+		{
+
+			int x = 0;
+			int y = 0;
+			int z = 0;
+			int maxSnaps = AllPoints.Count - 1;
+			int maxPoints = AllPoints.Count;
+
+			float xFloat = 0;
+			float yFloat = 0;
+			float zFloat = 0;
+			
+			
+				//foreach (Vector3 point in AllPoints)
+			for (int point = 0; point < maxPoints; ++point)
+			{
+				//Debug.Log("0 tempRef : " + tempRef + " AllPoints[point] : " + AllPoints[point]);
+
+				Vector3 tempRef = AllPoints[point].transform.position;
+				DrawFrustum.SSnapLines.Add(AllPoints[point].transform.position);
+				tempRef = SnapX(tempRef);
+				tempRef = SnapY(tempRef);
+				tempRef = SnapZ(tempRef);
+
+				if (point == 0)
+				{
+					xFloat = tempRef.x;
+					yFloat = tempRef.y;
+					zFloat = tempRef.z;
+				}
+
+			//	if ((tempRef.x == (Center.x + HalfWidth.x))
+			//		||
+			//		(tempRef.x == (Center.x - HalfWidth.x)))
+			//
+			//	if ((tempRef.y == (Center.y + HalfWidth.y))
+			//		||
+			//		(tempRef.y == (Center.y - HalfWidth.y)))
+			//		y++;
+			//
+			//	if ((tempRef.z == (Center.z + HalfWidth.z))
+			//		||
+			//		(tempRef.z == (Center.z - HalfWidth.z)))
+			//		z++;
+
+				if (tempRef.x == xFloat)
+					x++;
+				if (tempRef.y == yFloat)
+					y++;
+				if (tempRef.z == zFloat)
+					z++;
+
+
+				DrawFrustum.SSnapLines.Add(tempRef);
+
+				//Debug.Log("1 tempRef : " + tempRef + " AllPoints[point] : " + AllPoints[point]);
+			}
+
+
+
+
+			for (int point = 1; point < maxPoints; ++point)
+			{
+			}
+
+
+
+			if (
+				x >= maxSnaps
+				||
+				y >= maxSnaps
+				||
+				z >= maxSnaps
+				)
+			{
+				//Debug.Log("yo");
+				return false;
+			}
+			
+
+			return true;
+		}
+
+
+		Vector3 SnapX(Vector3 point)
+		{
+			if (point.x > (Center.x + HalfWidth.x))
+				point.x = Center.x + HalfWidth.x;
+
+			if (point.x < (Center.x - HalfWidth.x))
+				point.x = Center.x - HalfWidth.x;
+
+			return point;
+		}
+
+		Vector3 SnapY(Vector3 point)
+		{
+			if (point.y > (Center.y + HalfWidth.y))
+				point.y = Center.y + HalfWidth.y;
+
+			if (point.y < (Center.y - HalfWidth.y))
+				point.y = Center.y - HalfWidth.y;
+
+			return point;
+		}
+
+		Vector3 SnapZ(Vector3 point)
+		{
+			if (point.z > (Center.z + HalfWidth.z))
+				point.z = Center.z + HalfWidth.z;
+
+			if (point.z < (Center.z - HalfWidth.z))
+				point.z = Center.z - HalfWidth.z;
+
+			return point;
+		}
+
+		public void ColorContained()
+		{
+			if (TotalChildren > 0)
+			{
+
+				foreach (GameObject child in _Children)
+				{
+					DrawFrustum.STraversalLines.Add(Center);
+					DrawFrustum.STraversalLines.Add(child.transform.position);
+
+					child.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.blue;
+				}
+
+			}
+			//.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+		}
+
+		public void IsWithinFrustum(List<GameObject> AllPoints)
+		{
+			if (Parent != null)
+			{
+				DrawFrustum.STraversalLines.Add(Parent.Center);
+				DrawFrustum.STraversalLines.Add(Center);
+			}
+
+			if (TotalChildren > 0)
+			{
+				//if(_CurrentDepth > 0)
+					ColorContained();
+				//Debug.Log(" Center : " + Center + " HalfWidth :" + HalfWidth);
+				///Debug.Log(" _CurrentDepth : " + _CurrentDepth + " HalfWidth :" + HalfWidth);
+				//Debug.Log(" _TotalChildren : " + _TotalChildren + "_CurrentDepth" + _CurrentDepth);
+				//Debug.Log(" sQuarterDiagonal : " + sQuarterDiagonal);
+				for (int i = 0; i < 8; ++i)
+				{
+
+					if (_Nodes.ContainsKey(i))
+					{
+						if (_Nodes[i].FrustumLiesIn(AllPoints))
+						{
+							_Nodes[i].IsWithinFrustum(AllPoints);
+							//Debug.Log("_Nodes[i].Center : " + i);
+							//_Nodes[i].ColorContained();
+						}
+
+					}
+				}
+
+
+
+				//	Debug.Log(" Total children : " + TotalChildren);
+				//Debug.Log("-=======================================-");
+				//Debug.Log(" _Children : " + _Children.Count + " Depth : " + _CurrentDepth);
+				
+				
+				///foreach (GameObject child in _Children)
+				///{
+				///}
+			}
+		}
 
 		public void Clear()
 		{

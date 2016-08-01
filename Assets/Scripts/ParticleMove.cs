@@ -79,7 +79,7 @@ public class ParticleMove : MonoBehaviour
 
 		stepX = Mathf.Abs(speed * Mathf.Sin(angle));
 		stepY = Mathf.Abs(speed * Mathf.Cos(angle));
-		stepZ = stepX;// Mathf.Abs(speed * Mathf.Tan(angle));
+		stepZ = (stepX + stepY) / 2;// Mathf.Abs(speed * Mathf.Tan(angle));
 
 	}
 

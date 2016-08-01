@@ -13,6 +13,7 @@ public class KeyboardCameraControl : MonoBehaviour
 	public float MaxDimensionEnvironment = 28.0f;
 	public float Center = 0.0f;
 
+	public bool ControlMe = false;
 
 	GameObject _Target;
 	bool _TargetActive = true;
@@ -23,7 +24,6 @@ public class KeyboardCameraControl : MonoBehaviour
 
 	float _RotationX = 0.0f;
 	float _RotationY = 0.0f;
-
 	
 	public bool LockCursor = false;
 
@@ -45,14 +45,26 @@ public class KeyboardCameraControl : MonoBehaviour
 
 	void Update()
 	{
+
+
+
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			ControlMe = !ControlMe;
+		}
+
+
+
+		if (!ControlMe)
+			return;
+
 		if (LockCursor)
 		{
-			if (Input.GetKeyDown("escape"))
+			if (Input.GetKeyDown(KeyCode.Escape))
 			{ 
 				LockCursor = !LockCursor;
 				Cursor.lockState = wantedMode = CursorLockMode.None;
 			}
-
 
 			_TargetPosition = _Target.transform.position;
 			_RotationX += Input.GetAxis("Mouse X") * SLookSpeed;
@@ -100,8 +112,6 @@ public class KeyboardCameraControl : MonoBehaviour
 		}
 
 			SetCursorState();
-
-
 
 	}
 

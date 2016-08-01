@@ -24,7 +24,7 @@ public class GridOverlay : MonoBehaviour
 	bool completed = true;
 
 	public bool ShowPartitions = false;
-	public bool ShowHierarchy = true;
+	public bool ShowHierarchy = false;
 	 bool ShowParticleDebugLines = false;
 
 	void Start()
@@ -33,7 +33,7 @@ public class GridOverlay : MonoBehaviour
 	}
 
 
-	 void DrawLine(Vector3 center, Vector3 width)
+	void DrawLine(Vector3 center, Vector3 width)
 	{
 		GL.Vertex(center + width);
 		GL.Vertex(center - width);
@@ -202,6 +202,8 @@ public class GridOverlay : MonoBehaviour
  			//draw partitions for octrees
 			_MainInstance.DrawOctreePartitions();
 		}
+
+		DrawFrustum.DrawWireframe();
 
 		GL.End();
 	}
