@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
+using System;
 
 public class ParticleMove : MonoBehaviour
 {
@@ -12,6 +14,8 @@ public class ParticleMove : MonoBehaviour
 	public int XRangeMax =  8;
 	public int YRangeMax =  8;
 	public int ZRangeMax =  8;
+
+	public static MainInstance mainInst;
 	 
 	public bool goUp = true;
 	public bool goRight = true;
@@ -35,7 +39,8 @@ public class ParticleMove : MonoBehaviour
 	void Start()
 	{
 		// setPosition();
-		//setRadius();
+		if (mainInst != null)
+		mainInst.SetStart();
 		setDirection();
 
 	}
@@ -43,6 +48,8 @@ public class ParticleMove : MonoBehaviour
 	static public void ToggleMove()
 	{
 		_S_ToMove = !_S_ToMove;
+
+
 	}
 
 	// Update is called once per frame
@@ -56,9 +63,9 @@ public class ParticleMove : MonoBehaviour
 	void setPosition()
 	{
 		//set random position
-		position.x = (float)Random.Range(XRangeMin, XRangeMax);
-		position.y = (float)Random.Range(YRangeMin, YRangeMax);
-		position.z = (float)Random.Range(ZRangeMin, ZRangeMax);
+		position.x = (float)UnityEngine.Random.Range(XRangeMin, XRangeMax);
+		position.y = (float)UnityEngine.Random.Range(YRangeMin, YRangeMax);
+		position.z = (float)UnityEngine.Random.Range(ZRangeMin, ZRangeMax);
 		transform.position = position;
 	}
 
@@ -74,38 +81,29 @@ public class ParticleMove : MonoBehaviour
 	void setDirection()
 	{
 		//set random direction
-		int angle = Random.Range(0, 360);
-		speed = Random.Range(MinSpeed, MaxSpeed);
+		int angle = UnityEngine.Random.Range(0, 360);
+		speed = UnityEngine.Random.Range(MinSpeed, MaxSpeed);
 
-		stepX = Mathf.Abs(speed * Mathf.Sin(angle));
-		stepY = Mathf.Abs(speed * Mathf.Cos(angle));
-		stepZ = (stepX + stepY) / 2;// Mathf.Abs(speed * Mathf.Tan(angle));
+		if (MainInstance.StepXText >= 0)
+			stepX = MainInstance.StepXText;
+		else
+			stepX = Mathf.Abs(speed * Mathf.Sin(angle));
+
+		if (MainInstance.StepYText >= 0)
+			stepY = MainInstance.StepYText;
+		else
+			stepY = Mathf.Abs(speed * Mathf.Cos(angle));
+
+		if (MainInstance.StepZText >= 0)
+			stepZ = MainInstance.StepZText;
+		else
+			stepZ = (Mathf.Abs(speed * Mathf.Sin(angle)) + Mathf.Abs(speed * Mathf.Cos(angle))) / 2;
 
 	}
-
-	/*
-	void setColor()
-	{
-		//set random color
-		//Create random color
-		Color col1 = new Color(Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f), 1.0f);
-		Mesh mesh1 = GetComponent<MeshFilter>().mesh;
-
-		//Change colors of meshes
-		Vector3[] vertices = mesh1.vertices;
-		Color[] colors = new Color[vertices.Length];
-
-		for (int i = 0; i < vertices.Length; i++)
-		{
-			colors[i] = col1;
-			colors[i] = color;
-		}
-		mesh1.colors = colors; //Set new colors of vertices
-	}
-	 */
 
 	void move()
 	{
+
 		positionX = transform.position.x;
 		positionY = transform.position.y;
 		positionZ = transform.position.z;

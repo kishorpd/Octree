@@ -25,6 +25,16 @@ public class MainInstance : MonoBehaviour {
 	public Slider InputSplitAtSlider;
 
 
+	public InputField XText;
+	public InputField YText;
+	public InputField ZText;
+
+	static public float StepXText = 0.1f;
+	static public float StepYText = 0.1f;
+	static public float StepZText = 0.1f;
+
+
+
 	Vector3 _VParticleRadius;
 	float Center = 0.0f;
 	float MaxDimension = 17.0f;
@@ -37,7 +47,7 @@ public class MainInstance : MonoBehaviour {
 	//___private
 	private List<GameObject> _Particles;
 	private List<GameObject> _Vertices;
-	private bool _Paint = true;
+	private bool _Paint = false;
 	private bool _UpdateDepth = false;
 	private bool _UpdateSplitAt = false;
 	private bool _Clear = false;
@@ -66,8 +76,28 @@ public class MainInstance : MonoBehaviour {
 	static public bool SShowTraversal = false;
 	static public bool SShowSnap = false;
 
+	public void SetStart()
+	{
+
+		//setRadius();
+		if (XText.text == "")
+		{
+
+			XText.text = "-1";
+			YText.text = "-1";
+			ZText.text = "-1";
+		}
+		StepXText = Convert.ToSingle(XText.text);
+		StepYText = Convert.ToSingle(YText.text);
+		StepZText = Convert.ToSingle(ZText.text);
+
+	}
+
 	// Use this for initialization
 	void Start () {
+
+		ParticleMove.mainInst = this;
+		SetStart();
 		_Particles = new List<GameObject>();
 		_Vertices = new List<GameObject>();
 		_GridOverlay = GLCamera.GetComponent<GridOverlay>();
@@ -143,12 +173,13 @@ public class MainInstance : MonoBehaviour {
 			SpawnParticleOnClick();
 		}
 
-		UpdateText();
 		
 		//frustum
 		//if (_ShowTraversal)
 		if (RootOcTree.FrustumLiesIn(DrawFrustum.AllPoints))
 			RootOcTree.IsWithinFrustum(DrawFrustum.AllPoints);
+
+		UpdateText();
 	}
 
 
@@ -228,10 +259,13 @@ public class MainInstance : MonoBehaviour {
 		//	formatter.Serialize(s, RootOcTree);
 		//	size = s.Length;
 		//}
+		RootOcTree.UpdatePartitions();
 
 		TextBox.text = " Total Particles:" + RootOcTree.TotalChildren +
 			//"\n Total Size : " + size +
+			"\n Particles visited : " + Octree.STraversal +
 			"\n Maximum Depth : " + Octree.SMaxDepthReached +
+			"\n Total Partitions : " + Octree.STotalPartitions +
 			//"\n Particles on boundary : " + Octree.STotalOverLapping +
 			"\n Split at : " + Octree.SMaxChildren;
 
@@ -348,6 +382,13 @@ public class MainInstance : MonoBehaviour {
 	{
 		_UpdateDepth = true;
 		_NewMaxDepth = Convert.ToInt32(InputMaxDepth.text);
+
+		if(_NewMaxDepth > 800)
+		{
+			_NewMaxDepth = 800;
+			InputMaxDepth.text = "" + _NewMaxDepth;
+		}
+
 		if (_NewMaxDepth < 0)
 		{
 			_NewMaxDepth = 0;
@@ -380,5 +421,10 @@ public class MainInstance : MonoBehaviour {
 			InputMaxSplitAt.text = "" + _NewSplitAt;
 		}
 
+	}
+
+	public void PaintMode()
+	{
+		_Paint = !_Paint;	
 	}
 }

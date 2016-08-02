@@ -46,13 +46,10 @@ public class KeyboardCameraControl : MonoBehaviour
 	void Update()
 	{
 
-
-
 		if (Input.GetKeyDown(KeyCode.Space))
 		{
 			ControlMe = !ControlMe;
 		}
-
 
 
 		if (!ControlMe)

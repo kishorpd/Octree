@@ -52,13 +52,15 @@ namespace Assets.Scripts
 		static float SQUARE_ROOT_THREE_BY_TWO = Mathf.Sqrt(3)/2;
 
 		public static int STotalOverLapping = 0;
+		public static int STotalPartitions = 0;
+		public static int STraversal = 0;
 		public static int SMaxChildren = 3;
 		public static int SMaxDepthReached = 0;
 		public static bool SDebugVertices { get; set; }
 		public static bool SCheckBoundary = false;
 
 
-		bool _OverFlow = false;
+		//bool _OverFlow = false;
 		public int TotalChildren = 0;
 		int _CurrentDepth = 0;
 		public static MainInstance SMainInstance { get; set; }
@@ -83,6 +85,7 @@ namespace Assets.Scripts
 				SMaxChildren = 1;
 			}
 			SMaxDepthReached = 0;
+			STotalPartitions = 0;
 			//constructor of root 
 			Center = center;
 			HalfWidth = halfWidth;
@@ -92,6 +95,7 @@ namespace Assets.Scripts
 			//Debug.Log("SRadius : " + SRadius);
 			SMainInstance = main;
 			SDebugVertices = false;
+			STraversal = 0;
 		}
 
 
@@ -121,7 +125,7 @@ namespace Assets.Scripts
 		public bool Insert(GameObject particleObject)
 		{
 			int octantOfParticleObj = GetOctant(particleObject.transform.position);
-			if (_OverFlow) //total children > SMaxChildren
+			if (TotalChildren >= SMaxChildren) //total children > SMaxChildren
 			{
 				if (_CurrentDepth < SMaxDepthToStopAt)
 				{
@@ -161,10 +165,10 @@ namespace Assets.Scripts
 				_Children.Add(particleObject);
 				//Debug.Log(" _Children.Count : " + _Children.Count + " _CurrentDepth : " + _CurrentDepth);
 				++TotalChildren;
-				if (TotalChildren == SMaxChildren)
-				{
-					_OverFlow = true;
-				}
+				//if (TotalChildren == SMaxChildren)
+				//{
+				//	_OverFlow = true;
+				//}
 			}
 
 			//get octant
@@ -509,7 +513,7 @@ namespace Assets.Scripts
 
 		public void DrawPartitions(GridOverlay gridOverlay)
 		{
-			if (TotalChildren > 0)
+			if (TotalChildren >= SMaxChildren)
 			{
 				//Debug.Log(" Center : " + Center + " HalfWidth :" + HalfWidth);
 				///Debug.Log(" _CurrentDepth : " + _CurrentDepth + " HalfWidth :" + HalfWidth);
@@ -723,6 +727,7 @@ namespace Assets.Scripts
 					DrawFrustum.STraversalLines.Add(child.transform.position);
 
 					child.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.blue;
+					++STraversal;
 				}
 
 			}
@@ -777,7 +782,7 @@ namespace Assets.Scripts
 		{
 			if (TotalChildren > 0)
 			{
-				
+
 				for (int i = 0; i < 8; ++i)
 				{
 					if (_Nodes.ContainsKey(i))
@@ -788,10 +793,28 @@ namespace Assets.Scripts
 
 				_Children.Clear();
 				if (SCheckBoundary)
-				{ 
+				{
 					_OverLappingParticles.Clear();
 					STotalOverLapping = 0;
 				}
+			}
+		}
+
+		public void UpdatePartitions()
+		{
+			if (TotalChildren >= SMaxChildren)
+			{
+
+				for (int i = 0; i < 8; ++i)
+				{
+					if (_Nodes.ContainsKey(i))
+					{
+						_Nodes[i].UpdatePartitions();
+					}
+				}
+
+				++STotalPartitions;
+
 			}
 		}
 
